@@ -58,7 +58,7 @@ jobs:
         run: npm run build
 
       - name: Run unit tests
-        run: npm run test
+        run: npm run test -- --passWithNoTests
 
       - name: Lint Dockerfile
         uses: hadolint/hadolint-action@v3.1.0

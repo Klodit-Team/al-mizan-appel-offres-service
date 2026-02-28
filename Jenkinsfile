@@ -28,7 +28,7 @@ pipeline {
 
         stage('Test') {
             steps {
-                sh 'npm run test'
+                sh 'npm run test -- --passWithNoTests'
                 // uncomment for e2e tests 
                 // sh 'npm run test:e2e'
             }

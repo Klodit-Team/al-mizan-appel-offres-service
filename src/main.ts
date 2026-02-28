@@ -45,4 +45,7 @@ async function bootstrap() {
     logger.log(`📚 Swagger documentation accessible at: http://localhost:${port}/api/docs`);
 }
 
-bootstrap();
+bootstrap().catch((err) => {
+    console.error('Erreur au démarrage du serveur', err);
+    process.exit(1);
+});
