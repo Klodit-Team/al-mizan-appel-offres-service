@@ -41,7 +41,6 @@ lerna-debug.log*
 .env.local
 
 # npm/yarn/pnpm
-package-lock.json
 yarn.lock
 pnpm-lock.yaml
 
