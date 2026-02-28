@@ -7,17 +7,18 @@
 
 ## 🚀 État d'Avancement : Socle du Projet (NestJS)
 
-Le projet a été scaffoldé et initialisé avec toute la stack demandée : **NestJS + TypeORM + MySQL + Redis + MinIO + RabbitMQ**.
+Le projet a été scaffoldé et initialisé avec toute la stack demandée : **NestJS + TypeORM + PostgreSQL + Redis + MinIO + RabbitMQ**.
 
 ### Ce qui est en place :
-1. **L'infrastructure locale via Docker** (`docker-compose.yml`) avec MySQL, Redis, MinIO et RabbitMQ.
+1. **L'infrastructure locale via Docker** (`docker-compose.yml`) avec PostgreSQL, Redis, MinIO et RabbitMQ.
 2. **Le socle applicatif NestJS** :
    - Fichier `.env` pour la configuration.
-   - Les connexions à TypeORM (MySQL), CacheManager (Redis), et ClientsModule (RabbitMQ) configurées dans `app.module.ts`.
+   - Les connexions à TypeORM (PostgreSQL), CacheManager (Redis), et ClientsModule (RabbitMQ) configurées dans `app.module.ts`.
    - La validation globale activée (DTO) et la sécurité (Helmet).
    - La documentation Swagger configurée et accessible sur `/api/docs`.
    - L'architecture modulaire préparée dans `src/`.
 3. Un `Dockerfile` optimisé pour le déploiement sur Kubernetes !
+4. **CI/CD Pipeline** avec un `Jenkinsfile` standard et un workflow complet `GitHub Actions`.
 
 ### Comment lancer ?
 1. Lancer les bases de données : `docker-compose up -d`
@@ -148,7 +149,7 @@ Le système couvre **7 processus métiers** correspondant au cycle de vie comple
 
 ## 3. Contenu du Microservice Appels d'Offres
 
-> **Service Appels d'Offres** · Port `8003` · Base de données `ao_db` (MySQL)
+> **Service Appels d'Offres** · Port `8003` · Base de données `ao_db` (PostgreSQL)
 
 ### 3.1 Backlog Fonctionnel — 15 User Stories
 
@@ -174,7 +175,7 @@ Le système couvre **7 processus métiers** correspondant au cycle de vie comple
 
 ### 3.2 Schéma de Base de Données (`ao_db`)
 
-Le service contient les tables MySQL suivantes :
+Le service contient les tables PostgreSQL suivantes :
 - `appel_offres` (table principale)
 - `lot` (découpage)
 - `critere_eligibilite` (éliminatoires)
@@ -225,12 +226,12 @@ POST/GET              /appels-offres/:id/marche
 | Couche | Technologie | Commentaire |
 |--------|------------|-------------|
 | **Backend** | NestJS 10 (TypeScript) | API Modulaire |
-| **Bases de données** | MySQL 8.x + TypeORM | Instance isolée `ao_db` |
+| **Bases de données** | PostgreSQL 15 + TypeORM | Instance isolée `ao_db` |
 | **Cache** | Redis 7 + CacheManager | Performances et rate limiting |
 | **Fichiers** | MinIO (Client S3) | Stockage AWS-S3 compatible |
 | **Messaging** | RabbitMQ | Async events |
 | **Document API**| Swagger | `/api/docs` auto-généré |
-| **CI/CD** | Docker Multi-stage | Prêt pour Kubernetes |
+| **CI/CD** | Jenkins / GitHub Actions / Docker Multi-stage | Pipelines de build et test configurés, prêt pour K8s |
 
 ---
 
@@ -259,7 +260,7 @@ Client / API Gateway
 └─────────┼──────────────────────────┼─────────────┘
           │                          │
     ┌─────▼─────┐             ┌──────▼──────┐
-    │ MySQL     │             │  RabbitMQ   │
+    │ PostgreSQL│             │  RabbitMQ   │
     │ (ao_db)   │             │  Exchange   │
     └───────────┘             └─────────────┘
 ```

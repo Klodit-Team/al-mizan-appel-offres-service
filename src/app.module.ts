@@ -27,14 +27,14 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
             }),
         }),
 
-        // Configuration MySQL (Transactionnelle) via TypeORM
+        // Configuration PostgreSQL (Transactionnelle) via TypeORM
         TypeOrmModule.forRootAsync({
             imports: [ConfigModule],
             inject: [ConfigService],
             useFactory: (configService: ConfigService) => ({
-                type: 'mysql',
+                type: 'postgres',
                 host: configService.get<string>('DB_HOST', 'localhost'),
-                port: configService.get<number>('DB_PORT', 3306),
+                port: configService.get<number>('DB_PORT', 5432),
                 username: configService.get<string>('DB_USER', 'ao_user'),
                 password: configService.get<string>('DB_PASSWORD', 'secret'),
                 database: configService.get<string>('DB_NAME', 'ao_db'),

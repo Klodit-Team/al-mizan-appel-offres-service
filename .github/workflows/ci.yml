@@ -1,0 +1,87 @@
+name: Appels d'Offres CI/CD
+
+on:
+  push:
+    branches: ["main", "develop"]
+  pull_request:
+    branches: ["main", "develop"]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: ao_user
+          POSTGRES_PASSWORD: secret
+          POSTGRES_DB: ao_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+
+      rabbitmq:
+        image: rabbitmq:3-management-alpine
+        ports:
+          - 5672:5672
+
+    strategy:
+      matrix:
+        node-version: [20.x]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Print code style check (lint)
+        run: npm run lint
+
+      - name: Build the project
+        run: npm run build
+
+      - name: Run unit tests
+        run: npm run test
+
+      - name: Lint Dockerfile
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: Dockerfile
+
+  docker:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push local image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: false # Set to true and configure registry to publish
+          tags: klodit/ao-service:latest,klodit/ao-service:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
