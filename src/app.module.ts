@@ -1,9 +1,10 @@
 import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
+
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { CacheModule } from '@nestjs/cache-manager';
 import { redisStore } from 'cache-manager-ioredis-yet';
 import { ClientsModule, Transport } from '@nestjs/microservices';
+import { PrismaModule } from './prisma/prisma.module';
 
 @Module({
     imports: [
@@ -27,22 +28,7 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
             }),
         }),
 
-        // Configuration PostgreSQL (Transactionnelle) via TypeORM
-        TypeOrmModule.forRootAsync({
-            imports: [ConfigModule],
-            inject: [ConfigService],
-            useFactory: (configService: ConfigService) => ({
-                type: 'postgres',
-                host: configService.get<string>('DB_HOST', 'localhost'),
-                port: configService.get<number>('DB_PORT', 5432),
-                username: configService.get<string>('DB_USER', 'ao_user'),
-                password: configService.get<string>('DB_PASSWORD', 'secret'),
-                database: configService.get<string>('DB_NAME', 'ao_db'),
-                entities: [__dirname + '/**/*.entity{.ts,.js}'],
-                synchronize: configService.get<string>('NODE_ENV') !== 'production', // AUTO-CREATION DES TABLES EN DEV UNIQUEMENT
-                logging: configService.get<string>('NODE_ENV') === 'development',
-            }),
-        }),
+
 
         // Configuration Message Broker (RabbitMQ)
         ClientsModule.registerAsync([
@@ -62,6 +48,10 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
                 }),
             },
         ]),
+
+
+
+        PrismaModule,
 
         // Ajoutez ici les imports de vos modules métier (Ex: AppelOffresModule, LotsModule, ...)
     ],
