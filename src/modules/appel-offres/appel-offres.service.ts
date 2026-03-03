@@ -5,12 +5,12 @@ import {
 } from '@nestjs/common';
 import { CreateAppelOffreDto } from './dto/create-appel-offre.dto';
 import { UpdateAppelOffreDto } from './dto/update-appel-offre.dto';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { PrismaService } from '../../prisma/prisma.service';
 import { StatutAO } from '@prisma/client';
 
 @Injectable()
 export class AppelOffresService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
   create(createAppelOffreDto: CreateAppelOffreDto) {
     return this.prisma.appelOffres.create({ data: createAppelOffreDto });
   }
