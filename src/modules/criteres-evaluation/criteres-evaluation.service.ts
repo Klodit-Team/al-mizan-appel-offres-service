@@ -4,7 +4,8 @@ import { UpdateCriteresEvaluationDto } from './dto/update-criteres-evaluation.dt
 
 @Injectable()
 export class CriteresEvaluationService {
-  create(createCriteresEvaluationDto: CreateCriteresEvaluationDto) {
+  create(_createCriteresEvaluationDto: CreateCriteresEvaluationDto) {
+    console.log(_createCriteresEvaluationDto);
     return 'This action adds a new criteresEvaluation';
   }
 
@@ -16,7 +17,11 @@ export class CriteresEvaluationService {
     return `This action returns a #${id} criteresEvaluation`;
   }
 
-  update(id: number, updateCriteresEvaluationDto: UpdateCriteresEvaluationDto) {
+  update(
+    id: number,
+    _updateCriteresEvaluationDto: UpdateCriteresEvaluationDto,
+  ) {
+    console.log(_updateCriteresEvaluationDto);
     return `This action updates a #${id} criteresEvaluation`;
   }
 

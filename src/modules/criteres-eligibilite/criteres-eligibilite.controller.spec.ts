@@ -11,7 +11,9 @@ describe('CriteresEligibiliteController', () => {
       providers: [CriteresEligibiliteService],
     }).compile();
 
-    controller = module.get<CriteresEligibiliteController>(CriteresEligibiliteController);
+    controller = module.get<CriteresEligibiliteController>(
+      CriteresEligibiliteController,
+    );
   });
 
   it('should be defined', () => {

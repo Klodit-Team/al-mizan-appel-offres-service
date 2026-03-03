@@ -4,7 +4,8 @@ import { UpdateLotDto } from './dto/update-lot.dto';
 
 @Injectable()
 export class LotsService {
-  create(createLotDto: CreateLotDto) {
+  create(_createLotDto: CreateLotDto) {
+    console.log(_createLotDto);
     return 'This action adds a new lot';
   }
 
@@ -16,7 +17,8 @@ export class LotsService {
     return `This action returns a #${id} lot`;
   }
 
-  update(id: number, updateLotDto: UpdateLotDto) {
+  update(id: number, _updateLotDto: UpdateLotDto) {
+    console.log(_updateLotDto);
     return `This action updates a #${id} lot`;
   }
 

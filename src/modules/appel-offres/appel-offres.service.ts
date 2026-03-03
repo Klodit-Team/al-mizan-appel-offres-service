@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { CreateAppelOffreDto } from './dto/create-appel-offre.dto';
 import { UpdateAppelOffreDto } from './dto/update-appel-offre.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -6,7 +10,7 @@ import { StatutAO } from '@prisma/client';
 
 @Injectable()
 export class AppelOffresService {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
   create(createAppelOffreDto: CreateAppelOffreDto) {
     return this.prisma.appelOffres.create({ data: createAppelOffreDto });
   }
@@ -18,13 +22,18 @@ export class AppelOffresService {
   async findOne(id: string) {
     const ao = await this.prisma.appelOffres.findUnique({ where: { id } });
     if (!ao) {
-      throw new NotFoundException(`L'Appel d'Offres avec l'ID ${id} est introuvable.`);
+      throw new NotFoundException(
+        `L'Appel d'Offres avec l'ID ${id} est introuvable.`,
+      );
     }
     return ao;
   }
 
   update(id: string, updateAppelOffreDto: UpdateAppelOffreDto) {
-    return this.prisma.appelOffres.update({ where: { id }, data: updateAppelOffreDto });
+    return this.prisma.appelOffres.update({
+      where: { id },
+      data: updateAppelOffreDto,
+    });
   }
 
   remove(id: string) {
@@ -49,18 +58,19 @@ export class AppelOffresService {
     };
 
     // 3. Vérification de la légalité du changement
-    const estAutorise = transitionsAutorisees[statutActuel].includes(nouveauStatut);
+    const estAutorise =
+      transitionsAutorisees[statutActuel].includes(nouveauStatut);
 
     if (!estAutorise) {
       throw new BadRequestException(
-        `Transition de statut interdite : impossible de passer de [${statutActuel}] à [${nouveauStatut}].`
+        `Transition de statut interdite : impossible de passer de [${statutActuel}] à [${nouveauStatut}].`,
       );
     }
 
     // 4. Tout est bon, on met à jour !
     return this.prisma.appelOffres.update({
       where: { id },
-      data: { statut: nouveauStatut }
+      data: { statut: nouveauStatut },
     });
   }
 }

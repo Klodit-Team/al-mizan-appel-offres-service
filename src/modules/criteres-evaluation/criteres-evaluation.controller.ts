@@ -1,11 +1,21 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+} from '@nestjs/common';
 import { CriteresEvaluationService } from './criteres-evaluation.service';
 import { CreateCriteresEvaluationDto } from './dto/create-criteres-evaluation.dto';
 import { UpdateCriteresEvaluationDto } from './dto/update-criteres-evaluation.dto';
 
 @Controller('criteres-evaluation')
 export class CriteresEvaluationController {
-  constructor(private readonly criteresEvaluationService: CriteresEvaluationService) {}
+  constructor(
+    private readonly criteresEvaluationService: CriteresEvaluationService,
+  ) {}
 
   @Post()
   create(@Body() createCriteresEvaluationDto: CreateCriteresEvaluationDto) {
@@ -23,8 +33,14 @@ export class CriteresEvaluationController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateCriteresEvaluationDto: UpdateCriteresEvaluationDto) {
-    return this.criteresEvaluationService.update(+id, updateCriteresEvaluationDto);
+  update(
+    @Param('id') id: string,
+    @Body() updateCriteresEvaluationDto: UpdateCriteresEvaluationDto,
+  ) {
+    return this.criteresEvaluationService.update(
+      +id,
+      updateCriteresEvaluationDto,
+    );
   }
 
   @Delete(':id')
