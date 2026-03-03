@@ -1,36 +1,66 @@
-# Phase 2 : Le Cœur Métier — Gestion de l'Appel d'Offres 🏗️
+# Phase 2 : Cœur Métier des Appels d'Offres (CRUD & Machine à États) 🏢
 
-L'objectif de cette phase est de créer la logique CRUD basique pour un Appel d'Offres et de valider les données entrantes. On va utiliser le module central `appel-offres`.
+Maintenant que notre base de données est solide et gérée par Prisma (Phase 1), nous allons construire le moteur principal du microservice : la gestion du cycle de vie d'un **Appel d'Offres**.
+
+Ce module sera responsable de la création, de la lecture, de la mise à jour (notamment les statuts) et de la suppression logique d'un Appel d'Offres.
+
+---
 
 ## 🎯 Ce que tu dois accomplir :
 
-1.  **Génération de l'échafaudage NestJS :**
-    *   Exécuter : `nest g module modules/appel-offres`
-    *   Exécuter : `nest g service modules/appel-offres`
-    *   Exécuter : `nest g controller modules/appel-offres`
+### 1. Génération du Module de base
+Utilise le CLI NestJS pour générer tout le squelette (Module, Controller, Service, DTOs). Dans ton terminal, tape :
+```bash
+npx nest g res modules/appel-offres
+```
+- *Transport layer ?* -> Choisis **REST API**.
+- *Generate CRUD entry points ?* -> Choisis **Yes** (Y).
 
-2.  **Création des Data Transfer Objects (DTOs) :**
-    *   Définir dans `src/modules/appel-offres/dto/create-appel-offre.dto.ts` ce qu'un Service Contractant (SC) doit envoyer lors de la création d'un AO.
-    *   Utiliser la librairie `class-validator` : `@IsNotEmpty()`, `@IsString()`, `@IsUUID()`, `@IsPositive()` (pour le montant), `@IsDateString()`, etc.
-    *   Utiliser la librairie `@nestjs/swagger` : `@ApiProperty()` pour documenter chaque champ pour Swagger.
+NestJS va créer un dossier `src/modules/appel-offres/` avec tous les fichiers nécessaires.
 
-3.  **Implémentation du Service Métier (`appel-offres.service.ts`) :**
-    *   Injecter le Repository `AppelOffres` (`@InjectRepository(AppelOffres)`).
-    *   Créer une méthode `create` : Instancier l'AO, vérifier s'il existe déjà une référence identique, puis le sauvegarder.
-    *   Créer une méthode `findAll` pour lister les AOs (avec filtres potentiels par date, type...).
-    *   Créer une méthode `findById` : Si l'id n'existe pas, lancer une erreur `NotFoundException`.
-    *   Créer une méthode `updateStatus` : Vérifier qu'on respecte la machine à états (ex: impossible de passer de BROUILLON à ATTRIBUE).
+### 2. Validation des Entrées (Les DTOs)
+Dans le dossier `src/modules/appel-offres/dto/`, modifie le fichier `create-appel-offre.dto.ts`.
+C'est ici que tu vas bloquer les mauvaises requêtes envoyées par le frontend.
+Utilise `class-validator` pour t'assurer que les données sont conformes à la BDD Prisma.
 
-4.  **Implémentation du Contrôleur (`appel-offres.controller.ts`) :**
-    *   Créer les routes HTTP : `@Post()`, `@Get()`, `@Get(':id')`, `@Patch(':id/status')`.
-    *   Annoter chaque route pour Swagger : `@ApiOperation()`, `@ApiResponse()`.
-    *   Relier les routes aux méthodes du Service.
+**Exemple de ce que tu dois coder pour `CreateAppelOffreDto` :**
+*   `reference`: `@IsString()`, `@IsNotEmpty()`
+*   `objet`: `@IsString()`, `@IsNotEmpty()`
+*   `typeProcedure`: `@IsEnum(TypeProcedure)` *(Importe l'enum depuis `@prisma/client` !)*
+*   `montantEstime`: `@IsNumber()`, `@IsPositive()`
+*   `dateLimiteSoumission`: `@IsDateString()`
+*   `wilaya`: `@IsString()`
+*   `secteurActivite`: `@IsString()`
 
-## 🛠️ Outils NestJS à utiliser :
-*   `class-validator` pour les DTOs
-*   `@InjectRepository` de `@nestjs/typeorm`
-*   Les exceptions HTTP intégrées (`NotFoundException`, `BadRequestException`)
-*   Le module Swagger (`@nestjs/swagger`)
+*Rappel : N'oublie pas d'ajouter les décorateurs Swagger (`@ApiProperty()`) sur chaque propriété pour que la doc se génère !*
+
+### 3. Le Service Principal (`appel-offres.service.ts`)
+C'est le cerveau de cette phase.
+1. **Importe le PrismaService** : Injecte `PrismaService` dans le constructeur de ton `AppelOffresService`.
+2. **Implémente les méthodes CRUD** :
+    - `create()` : Fais un `this.prisma.appelOffres.create({ data: createDto })`.
+    - `findAll()` : Fais un `this.prisma.appelOffres.findMany()`. Tu pourras ajouter de la pagination plus tard.
+    - `findOne(id)` : Fais un `this.prisma.appelOffres.findUnique()`. S'il n'existe pas, lance une `NotFoundException('AO non trouvé')`.
+3. **Implémente la Machine à États (`updateStatut`)** :
+    - Crée une fonction spécifique `changerStatut(id: string, nouveauStatut: StatutAO)`.
+    - **Règle métier vitale :** Un statut ne peut changer que dans un ordre précis.
+      *Exemple : On ne peut passer à `OUVERTURE_PLIS` que si on était en `EN_COURS` ou `PUBLIE`.*
+    - Fais un `this.prisma.appelOffres.update({ data: { statut: nouveauStatut } })` uniquement si la règle est respectée.
+
+### 4. Le Contrôleur (`appel-offres.controller.ts`)
+Vérifie que le contrôleur généré par NestJS appelle bien les bonnes méthodes de ton Service.
+Ajoute un Endpoint personnalisé (ex: `@Patch(':id/statut')`) pour appeler ta fonction `changerStatut`.
+
+---
+
+## 🛠️ Outils NestJS/Prisma à utiliser :
+- L'import Prisma : `import { PrismaService } from 'src/prisma/prisma.service';`
+- Les Enums Prisma : `import { StatutAO, TypeProcedure } from '@prisma/client';`
+- La Gestion d'erreurs NestJS : `throw new BadRequestException("Transition de statut interdite");`
 
 ## ✅ Critère de validation :
-Tu dois pouvoir envoyer une requête POST depuis Swagger (http://localhost:8003/api/docs) avec un JSON JSON valide pour créer un AO, et obtenir une réponse 201 Created. Une requête avec une référence manquante doit renvoyer une erreur 400 Bad Request automatique (grâce au ValidationPipe de ton main.ts). L'AO doit être visible dans la BDD PostgreSQL.
+1. Lance `npm run start:dev`.
+2. Ouvre Swagger (`http://localhost:8003/api/docs`).
+3. Ouvre l'accordéon **Appel-offres**.
+4. Teste l'endpoint `POST /appel-offres` en envoyant un JSON valide. Tu dois recevoir un code HTTP `201 Created` avec l'ID généré par PostgreSQL !
+5. Essaie d'envoyer un `montantEstime` négatif, le serveur doit te rejeter avec une erreur `400 Bad Request`.

@@ -5,28 +5,6 @@
 
 ---
 
-## 🚀 État d'Avancement : Socle du Projet (NestJS)
-
-Le projet a été scaffoldé et initialisé avec toute la stack demandée : **NestJS + TypeORM + PostgreSQL + Redis + MinIO + RabbitMQ**.
-
-### Ce qui est en place :
-1. **L'infrastructure locale via Docker** (`docker-compose.yml`) avec PostgreSQL, Redis, MinIO et RabbitMQ.
-2. **Le socle applicatif NestJS** :
-   - Fichier `.env` pour la configuration.
-   - Les connexions à TypeORM (PostgreSQL), CacheManager (Redis), et ClientsModule (RabbitMQ) configurées dans `app.module.ts`.
-   - La validation globale activée (DTO) et la sécurité (Helmet).
-   - La documentation Swagger configurée et accessible sur `/api/docs`.
-   - L'architecture modulaire préparée dans `src/`.
-3. Un `Dockerfile` optimisé pour le déploiement sur Kubernetes !
-4. **CI/CD Pipeline** avec un `Jenkinsfile` standard et un workflow complet `GitHub Actions`.
-
-### Comment lancer ?
-1. Lancer les bases de données : `docker-compose up -d`
-2. Lancer le microservice : `npm run start:dev`
-3. Swagger : `http://localhost:8003/api/docs`
-
----
-
 ## 📑 Table des Matières
 
 1. [Présentation du Projet](#1-présentation-du-projet)
@@ -100,7 +78,7 @@ Le système couvre **7 processus métiers** correspondant au cycle de vie comple
 | 2.1 | SC / Système | Génère l'**avis réglementaire** conforme (BOMOP + presse nationale) |
 | 2.2 | Système | Publie sur le **portail public** (accès sans inscription préalable) |
 | 2.3 | Système | Contrôle automatique du respect du **délai minimum** |
-| 2.4 | OE (Public) | Consulte les AO publiés et télécharge le CDC |
+| 2.4 | OE (Public) | Consulter les AO publiés et télécharge le CDC |
 
 ---
 
@@ -175,7 +153,7 @@ Le système couvre **7 processus métiers** correspondant au cycle de vie comple
 
 ### 3.2 Schéma de Base de Données (`ao_db`)
 
-Le service contient les tables PostgreSQL suivantes :
+Le service contient les tables PostgreSQL suivantes, générées via **Prisma** :
 - `appel_offres` (table principale)
 - `lot` (découpage)
 - `critere_eligibilite` (éliminatoires)
@@ -221,12 +199,12 @@ POST/GET              /appels-offres/:id/marche
 
 ---
 
-## 4. Stack Technologique (Actuelle)
+## 4. Stack Technologique (Cible)
 
 | Couche | Technologie | Commentaire |
 |--------|------------|-------------|
 | **Backend** | NestJS 10 (TypeScript) | API Modulaire |
-| **Bases de données** | PostgreSQL 15 + TypeORM | Instance isolée `ao_db` |
+| **Bases de données** | PostgreSQL 15 + **Prisma ORM** | Instance isolée `ao_db` via Prisma Client |
 | **Cache** | Redis 7 + CacheManager | Performances et rate limiting |
 | **Fichiers** | MinIO (Client S3) | Stockage AWS-S3 compatible |
 | **Messaging** | RabbitMQ | Async events |
@@ -254,8 +232,8 @@ Client / API Gateway
 │  │  Service Layer (Business Logic)         │    │
 │  └──────┬──────────────────────────┬───────┘    │
 │  ┌──────▼──────┐          ┌────────▼────────┐   │
-│  │ Repository  │          │ Event Publisher │   │
-│  │ Layer       │          │ (RabbitMQ)      │   │
+│  │ PrismaClient│          │ Event Publisher │   │
+│  │ (ORM Layer) │          │ (RabbitMQ)      │   │
 │  └──────┬──────┘          └────────┬────────┘   │
 └─────────┼──────────────────────────┼─────────────┘
           │                          │
@@ -279,4 +257,33 @@ Client / API Gateway
 
 ---
 
+## 7. 🚀 État d'Avancement Actuel
+
+### Ce qui est en place (Configuration Initialisée) :
+1. **Infrastructure Docker locale** (`docker-compose.yml`) avec PostgreSQL, Redis, MinIO et RabbitMQ.
+2. **Pipelines CI/CD** (GitHub Actions et Jenkinsfile) configurés :
+   - Tests automatisés (avec la balise `--passWithNoTests` prêt à inclure nos tests unitaires).
+   - Validation ESLint/Prettier.
+   - Build de sécurité Docker à travers `hadolint`.
+3. **Connectivité des modules globaux** : API Rest, Cache Redis, ConfigModule pour le `.env`.
+4. **Modélisation Base de Données (Phase 1 VALIDÉE)** : 
+   - Passage complet à **Prisma v6**.
+   - Le fichier `schema.prisma` gère de façon centralisée les 9 modèles métier (`AppelOffres`, `Lot`, `CritereEligibilite`, etc.) et les énumérations.
+   - La base de données contient **10 tables déployées avec succès** de façon automatisée en base `ao_db`.
+   - `PrismaService` injecté globalement et prêt à être utilisé par tous nos futurs contrôleurs et services métier.
+
+5. **Cœur Métier Appels d'Offres (Phase 2 VALIDÉE)** :
+   - Structure du module générée (`Controller`, `Service`, `DTO`).
+   - Protections anti-injections et validation de payload implémentées avec succès via `class-validator` et `@nestjs/swagger` dans les DTOs.
+   - CRUD complet branché directement sur PostgreSQL via `PrismaClient` (création avec vérification, suppression logique, listage).
+   - **Machine à États métier** : Un endpoint `PATCH /:id/statut` a été codé avec des règles strictes pour bloquer les transitions de statuts illégales (ex: interdire de passer de BROUILLON à ATTRIBUE). L'API renvoie des erreurs 400 intelligentes en cas d'abus.
+
+### Prochaines étapes : Les 4 Phases restantes
+Nous continuons le développement fonctionnel :
+- **Phase 3** : Lier les sous-ressources à l'AO parent (`Lots` et `Critères`).
+- **Phase 4** : Brancher notre SDK AWS-S3 sur l'`Upload / Download` de MinIO pour stocker le CDC.
+- **Phase 5** : Publier dans l'event-bus `RabbitMQ` pour informer les autres microservices.
+- **Phase 6** : Les Workflows complexes via IA, le Gré-à-Gré et l'intégration du RBAC (`@Roles(...)`).
+
+---
 *Base issue du Cahier des Spécifications Logicielles (CSL) Al-Mizan v1.0, équipe KLODIT.*

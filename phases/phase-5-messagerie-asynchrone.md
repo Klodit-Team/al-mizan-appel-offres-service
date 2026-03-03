@@ -1,34 +1,48 @@
-# Phase 5 : Messagerie Asynchrone (RabbitMQ) 🐇
+# Phase 5 : Messagerie Asynchrone avec RabbitMQ 🐇
 
-L'objectif de cette phase est de décoder le système de messagerie asynchrone pour la communication inter-services. Le CSL spécifie que les services (Notification, Audit, Recours) écoutent / publient des évènements pour agir de manière non bloquante.
+La dernière étape d'un composant majeur est de prévenir le reste du Système d'Information que quelque chose vient de se passer.
+
+Le microservice `Appel d'Offres` est le chef d'orchestre de la Phase 1 et 2 du processus métier. Quand il publie un marché ou prononce une attribution, les autres microservices (comme `Notification`, `Audit`, ou `Soumission`) doivent réagir. Mais il **ne doit pas** les attendre de manière synchrone, sinon c'est toute la plateforme qui sera lente.
+
+---
 
 ## 🎯 Ce que tu dois accomplir :
 
-1.  **Génération du Module :**
-    *   Exécuter : `nest g module messaging`
-    *   Exécuter : `nest g service messaging/publishers/ao-events.publisher`
-    *   Exécuter : `nest g controller messaging/consumers/recours.consumer` (NestJS écoute via les contrôleurs).
+### 1. Configuration du Client RabbitMQ
+Tu as déjà injecté `RABBITMQ_EVENT_BUS` dans `app.module.ts`.
+On l'utilisera dans le `AppelOffresService`.
+**L'Exchange cible :**
+*   `RABBITMQ_EXCHANGE_AO=ao.events`
+*   Mais au lieu d'utiliser RabbitMQ nativement, NestJS fournit un wrapper extrêmement puissant avec le module `@nestjs/microservices`.
 
-2.  **Configuration des Émissions (Publisher) :**
-    *   Il faut l'injecter le `RABBITMQ_EVENT_BUS` (Microservice ClientProxy configuré dans `app.module.ts`).
-    *   Méthode `publishAoCreated(aoId, ref)` : Emet `{ pattern: 'ao.created', data: {id, ref, date} }`.
-    *   Méthode `publishAoPublished(aoId, ref, timeout)` : Informe _Notif_ et _Audit_.
-    *   Méthode `publishAttributionProvisoire(aoId, winnerId)` : Emet vers `ao.attribution.provisoire` pour lancer le timer légal des recours.
+### 2. Émettre l'Event `ao.published` 📢
+Le Service Contractant vient de cliquer sur "Publier" (en Phase 2). La base de données Prisma a été mise à jour avec `statut: PUBLIE`. 
+1. Injecte via Constructeur le `@Inject('RABBITMQ_EVENT_BUS') client: ClientProxy`.
+2. Appelle `this.client.emit('ao.published', { aoId: "UUID-HERE", ref: "A-2025-01", date: new Date() })`.
+3. Cette action envoie silencieusement un JSON dans RabbitMQ à destination du Microservice `NotificationService` qui va spammer la boite mail de tous les OE d'Algérie !
 
-3.  **Liaison des Publishers au Cœur Métier (AppelOffresService) :**
-    *   Dans ton API, lorsqu'on bascule un statut de `BROUILLON` à `PUBLIE`, appeler `this.aoEventsPublisher.publishAoPublished(...)`.
-    *   Si le Publish échoue, la transaction locale ne doit pas planter (C'est l'essence du RabbitMQ Fire & Forget dans une approche non critique).
+### 3. Cycle de Vie Asynchrone Complet : Attributions
+Tu dois aussi émettre deux autres événements :
+*   `ao.attribution.provisoire` : Lors de la modification de l'AO. Cet événement informe le module *Recours* de lancer son timer légal de 10 jours.
+*   `ao.attribution.definitive` : Le contrat finalisé, prêt à être instancié dans sa table `Marche` (Prisma) !
 
-4.  **Écoute d'un Événement Externe (Consumer) :**
-    *   Ouvrir `recours.consumer.ts`.
-    *   Annoter la route avec `@MessagePattern('recours.periode.expired')` (RabbitMQ Topic / Routing Key).
-    *   Ce message est (théoriquement) émis par un timer du Service Recours.
-    *   Action : Extraire l'`ao_id` de la Payload RabbitMQ, aller chercher l'Appel d'Offres PostgreSQL, et auto-valider l'attribution (Status: `ATTRIBUTION_DEFINITIVE`).
+### 4. Réception Asynchrone (Consumer) 🎧
+Le Microservice Recours (qui n'est pas le nôtre) va lancer un timer de 10 jours. Quand ce timer se termine, il renvoie un évènement à tout le système : `recours.periode.expired`.
+1. Dans ton `AppelOffresController`, ajoute la méthode décorée :
+   ```typescript
+   @EventPattern('recours.periode.expired')
+   async handleRecoursExpired(data: { aoId: string }) { ... }
+   ```
+2. Lorsqu'il reçoit ce message, le service AO doit automatiquement mettre à jour sa base Prisma pour déverrouiller le marché et autoriser l'Attribution Définitive, selon le cycle légal de la BDD.
 
-## 🛠️ Outils NestJS à utiliser :
-*   Le client `ClientProxy` typique `@nestjs/microservices`.
-*   Le mapping `@MessagePattern()` ou `@EventPattern()` avec `@Payload()`.
-*   Le pattern architectural "Saga" basique (on débloque un processus uniquement si on reçoit l'événement).
+---
+
+## 🛠️ Outils NestJS & RabbitMQ à utiliser :
+*   `ClientProxy` de `@nestjs/microservices` pour envoyer l'Event asynchrone sans attendre de réponse de TCP HTTP (`.emit`).
+*   `@EventPattern('topic.name')` sur les Contrôleurs pour écouter.
 
 ## ✅ Critère de validation :
-Depuis l'interface d'administration de ton RabbitMQ (http://localhost:15672 - admin/guest), tu dois brancher ta queue `ao.events`. Lorsque tu fais l'API POST sur Swagger pour publier un AO, tu dois voir la création de la payload RabbitMQ JSON propre. A l'inverse, si tu assembles manuellement un JSON `{ "aoId": "..." }` sur l'Exchange "Recours" depuis RabbitMQ, ton serveur NestJs doit logguer qu'il débloque l'Attribution Définitive et met à jour PostgreSQL.
+Une fois le `AppelOffresService` mis à jour : 
+1. Ouvre l'interface native de ton RabbitMQ local : `http://localhost:15672/` (guest/guest).
+2. Lance Swagger, publie un Appel d'Offres (Passe de `BROUILLON` à `PUBLIE` via ton point de chute PATCH `/statut`).
+3. Rafraîchis RabbitMQ. Dans la section "Queues" de RabbitMQ, tu devrais voir arriver 1 message `{"pattern":"ao.published","data":...}` prêt à être consommé par la grappe applicative.
