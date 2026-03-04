@@ -2,12 +2,43 @@ name: Appels d'Offres CI/CD
 
 on:
   push:
-    branches: ['main', 'develop']
+    branches: ["main", "develop"]
   pull_request:
-    branches: ['main', 'develop']
+    branches: ["main", "develop"]
 
 jobs:
-  build-and-test:
+  build-and-lint:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [20.x]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Print code style check (lint)
+        run: npm run lint
+
+      - name: Build the project
+        run: npm run build
+
+      - name: Lint Dockerfile
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: Dockerfile
+
+  unit-test:
+    needs: build-and-lint
     runs-on: ubuntu-latest
 
     services:
@@ -46,16 +77,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
-          cache: 'npm'
+          cache: "npm"
 
       - name: Install dependencies
         run: npm ci
-
-      - name: Print code style check (lint)
-        run: npm run lint
-
-      - name: Build the project
-        run: npm run build
 
       - name: Run unit tests
         run: npm run test -- --passWithNoTests
@@ -66,7 +91,7 @@ jobs:
           dockerfile: Dockerfile
 
   docker:
-    needs: build-and-test
+    needs: unit-test
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument */
 import { Test, TestingModule } from '@nestjs/testing';
 import { CriteresEvaluationController } from './criteres-evaluation.controller';
 import { CriteresEvaluationService } from './criteres-evaluation.service';
@@ -50,7 +51,9 @@ describe('CriteresEvaluationController', () => {
 
   describe('findAll', () => {
     it('doit appeler le service', async () => {
-      mockCriteresEvaluationService.findAll.mockResolvedValueOnce([{ id: 'c1' }]);
+      mockCriteresEvaluationService.findAll.mockResolvedValueOnce([
+        { id: 'c1' },
+      ]);
 
       const result = await controller.findAll('ao-id');
       expect(service.findAll).toHaveBeenCalledWith('ao-id');

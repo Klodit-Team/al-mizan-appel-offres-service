@@ -10,15 +10,16 @@
 1. [Présentation du Projet](#1-présentation-du-projet)
 2. [Processus Métiers Complets](#2-processus-métiers-complets)
 3. [Contenu du Microservice Appels d'Offres](#3-contenu-du-microservice-appels-doffres)
-   - [Backlog Fonctionnel](#31-backlog-fonctionnel--15-user-stories)
-   - [Schéma de Base de Données](#32-schéma-de-base-de-données-ao_db)
-   - [Endpoints API REST](#33-endpoints-api-rest)
-   - [Événements RabbitMQ](#34-événements-rabbitmq)
-   - [Sécurité Spécifique](#35-sécurité-spécifique)
-4. [Stack Technologique](#4-stack-technologique)
+   - [3.1 Backlog Fonctionnel — 15 User Stories](#31-backlog-fonctionnel--15-user-stories)
+   - [3.2 Schéma de Base de Données (`ao_db`)](#32-schéma-de-base-de-données-ao_db)
+   - [3.3 Endpoints API REST](#33-endpoints-api-rest)
+   - [3.4 Événements RabbitMQ](#34-événements-rabbitmq)
+   - [3.5 Sécurité Spécifique](#35-sécurité-spécifique)
+4. [Stack Technologique (Cible)](#4-stack-technologique-cible)
 5. [Architecture du Microservice](#5-architecture-du-microservice)
 6. [Acteurs du Système](#6-acteurs-du-système)
 7. [Matrice de Conformité Réglementaire](#7-matrice-de-conformité-réglementaire)
+8. [État d'Avancement Actuel](#8--état-davancement-actuel)
 
 ---
 
@@ -192,11 +193,48 @@ POST/GET              /appels-offres/:id/marche
 
 ### 3.4 Événements RabbitMQ
 
-| Type         | Exchange         | Routing Key                 | Description                                      |
-| ------------ | ---------------- | --------------------------- | ------------------------------------------------ |
-| **Émission** | `ao.events`      | `ao.published`              | Informe Notifications et Audit de la publication |
-| **Émission** | `ao.events`      | `ao.attribution.provisoire` | Déclenche le timer de recours                    |
-| **Consomme** | `recours.events` | `recours.periode.expired`   | Déverrouille l'attribution définitive            |
+#### Événements **publiés** par le Service Appels d'Offres
+
+| Exchange | Routing Key | Payload | Consommateurs |
+|----------|-------------|---------|---------------|
+| `ao.events` | `ao.created` | `{ ao_id, sc_id, type, objet }` | Audit |
+| `ao.events` | `ao.published` | `{ ao_id, date_publication, wilaya, secteur }` | Notifications, Audit |
+| `ao.events` | `ao.status_changed` | `{ ao_id, ancien_statut, nouveau_statut, changed_by }` | Audit |
+| `ao.events` | `ao.attribution.provisoire` | `{ ao_id, soumission_id, operateur_id, date_fin_recours }` | **Notifications** (tous les soumissionnaires), **Recours** (start timer) |
+| `ao.events` | `ao.attribution.definitive` | `{ ao_id, marche_id, operateur_id }` | Notifications, Audit |
+| `ao.events` | `ao.annule` | `{ ao_id, motif }` | Notifications, Audit |
+| `ao.events` | `ao.gre_a_gre.submitted` | `{ gag_id, ao_id, justification }` | **IA Gré à Gré** (analyse) |
+
+#### Événements **consommés** par le Service Appels d'Offres
+
+| Exchange | Routing Key | Action déclenchée |
+|----------|-------------|-------------------|
+| `recours.events` | `recours.periode.expired` | Déverrouille l'attribution définitive |
+| `ia.events` | `ia.gre_a_gre.scored` | Stocke le score IA + recommandation dans `demande_gre_a_gre` |
+
+---
+
+### 3.5 Sécurité Spécifique
+
+#### Contrôle d'Accès RBAC
+
+| Rôle | Permissions sur ce Service |
+|------|---------------------------|
+| `ADMIN` | Toutes les opérations, audit, supervision |
+| `SERVICE_CONTRACTANT` | Créer/modifier/publier AO, gérer lots/critères/CDC, prononcer attributions |
+| `OPERATEUR_ECONOMIQUE` | Consulter AO publiés, télécharger CDC (traçabilité) |
+| `CONTROLEUR` | Valider/rejeter demandes gré-à-gré |
+| `PUBLIC` | Consulter AO publiés (lecture seule, sans inscription) |
+
+> Le contrôle RBAC est délégué à l'**API Gateway**, qui valide la session Redis avant chaque requête. Le service AO reçoit les informations utilisateur dans les headers (injections API Gateway). Aucun appel direct à auth_db.
+
+#### Sécurité des Données
+
+- **Cache Redis** : liste AO publiés (TTL 5 min, invalidation à chaque publication)
+- **URLs présignées MinIO** : téléchargement CDC (TTL 30 min, fichier immutable)
+- **Machine à états stricte** : transitions irréversibles, chaque changement est journalisé
+- **Horodatage certifié** de toutes les publications (Art. 42, 43)
+- **Pagination par curseur** pour les listes d'AO (résistance aux pics de charge)
 
 ---
 
@@ -258,7 +296,21 @@ Client / API Gateway
 
 ---
 
-## 7. 🚀 État d'Avancement Actuel
+## 7. Matrice de Conformité Réglementaire
+
+#### Conformité Réglementaire Automatique
+
+| Règle | Référence Légale | Implémentation |
+|-------|------------------|----------------|
+| Délai minimum 30 jours AO ouvert | Art. 43 Loi 23-12 | Validation automatique avant publication + alerte |
+| Délai minimum 15 jours (urgence) | Art. 43 Loi 23-12 | Mode urgence configurable avec validation |
+| Contenu obligatoire de l'avis | Art. 44 Loi 23-12 | Formulaire structuré — champs requis validés |
+| Publication BOMOP + 2 quotidiens | Art. 42 Loi 23-12 | Génération PDF BOMOP + flags `publie_bomop`, `publie_presse` |
+| Timer recours 10 jours | Art. 83 Loi 23-12 | Calcul automatique `date_fin_recours = date_attribution + 10 jours` |
+
+---
+
+## 8. 🚀 État d'Avancement Actuel
 
 ### Ce qui est en place (Configuration Initialisée) :
 

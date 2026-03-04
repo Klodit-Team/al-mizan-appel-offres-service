@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument */
 import { Test, TestingModule } from '@nestjs/testing';
 import { CriteresEligibiliteController } from './criteres-eligibilite.controller';
 import { CriteresEligibiliteService } from './criteres-eligibilite.service';
@@ -52,7 +53,9 @@ describe('CriteresEligibiliteController', () => {
 
   describe('findAll', () => {
     it('doit appeler le service', async () => {
-      mockCriteresEligibiliteService.findAll.mockResolvedValueOnce([{ id: 'c1' }]);
+      mockCriteresEligibiliteService.findAll.mockResolvedValueOnce([
+        { id: 'c1' },
+      ]);
 
       const result = await controller.findAll('ao-id');
       expect(service.findAll).toHaveBeenCalledWith('ao-id');
@@ -62,7 +65,9 @@ describe('CriteresEligibiliteController', () => {
 
   describe('findOne', () => {
     it('doit appeler le service avec aoId et id', async () => {
-      mockCriteresEligibiliteService.findOne.mockResolvedValueOnce({ id: 'c1' });
+      mockCriteresEligibiliteService.findOne.mockResolvedValueOnce({
+        id: 'c1',
+      });
 
       const result = await controller.findOne('ao-id', 'c1');
       expect(service.findOne).toHaveBeenCalledWith('ao-id', 'c1');

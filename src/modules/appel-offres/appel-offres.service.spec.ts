@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call */
 import { Test, TestingModule } from '@nestjs/testing';
 import { AppelOffresService } from './appel-offres.service';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -59,22 +60,31 @@ describe('AppelOffresService', () => {
   });
 
   describe('uploadCdc', () => {
-    it('doit lever une ConflictException si l\'AO n\'est pas BROUILLON', async () => {
-      prisma.appelOffres.findUnique.mockResolvedValueOnce({ statut: StatutAO.PUBLIE });
+    it("doit lever une ConflictException si l'AO n'est pas BROUILLON", async () => {
+      prisma.appelOffres.findUnique.mockResolvedValueOnce({
+        statut: StatutAO.PUBLIE,
+      });
 
       const fileBuffer = Buffer.from('test pdf');
       await expect(
-        service.uploadCdc('ao-id', fileBuffer, 'application/pdf', 0)
+        service.uploadCdc('ao-id', fileBuffer, 'application/pdf', 0),
       ).rejects.toThrow(ConflictException);
     });
 
     it('doit uploader sur S3 et créer un document dans Prisma', async () => {
-      prisma.appelOffres.findUnique.mockResolvedValueOnce({ statut: StatutAO.BROUILLON });
+      prisma.appelOffres.findUnique.mockResolvedValueOnce({
+        statut: StatutAO.BROUILLON,
+      });
       storage.uploadFile.mockResolvedValueOnce('s3://cdc-documents/AO-123.pdf');
       prisma.documentCdc.create.mockResolvedValueOnce({ id: 'doc-123' });
 
       const fileBuffer = Buffer.from('test pdf');
-      const result = await service.uploadCdc('ao-id', fileBuffer, 'application/pdf', 500);
+      const result = await service.uploadCdc(
+        'ao-id',
+        fileBuffer,
+        'application/pdf',
+        500,
+      );
 
       expect(storage.uploadFile).toHaveBeenCalledTimes(1);
       expect(prisma.documentCdc.create).toHaveBeenCalledWith({
@@ -89,34 +99,41 @@ describe('AppelOffresService', () => {
   });
 
   describe('getPresignedDownloadUrl', () => {
-    it('doit retourner une NotFoundException s\'il n\'y a pas de CDC', async () => {
+    it("doit retourner une NotFoundException s'il n'y a pas de CDC", async () => {
       prisma.appelOffres.findUnique.mockResolvedValueOnce({ id: 'ao-id' });
       prisma.documentCdc.findFirst.mockResolvedValueOnce(null);
 
       await expect(
-        service.getPresignedDownloadUrl('ao-id', 'op-id')
+        service.getPresignedDownloadUrl('ao-id', 'op-id'),
       ).rejects.toThrow(NotFoundException);
     });
 
-    it('doit générer une URL, tracer le retrait et retourner l\'URL', async () => {
+    it("doit générer une URL, tracer le retrait et retourner l'URL", async () => {
       prisma.appelOffres.findUnique.mockResolvedValueOnce({ id: 'ao-id' });
       prisma.documentCdc.findFirst.mockResolvedValueOnce({
         id: 'doc-id',
         fichierUrl: 's3://cdc-documents/my-file.pdf',
       });
-      storage.getPresignedDownloadUrl.mockResolvedValueOnce('https://minio.local/download?sign');
+      storage.getPresignedDownloadUrl.mockResolvedValueOnce(
+        'https://minio.local/download?sign',
+      );
       prisma.retraitCdc.create.mockResolvedValueOnce({ id: 'retrait-1' });
 
       const result = await service.getPresignedDownloadUrl('ao-id', 'op-id');
 
-      expect(storage.getPresignedDownloadUrl).toHaveBeenCalledWith('cdc-documents', 'my-file.pdf');
+      expect(storage.getPresignedDownloadUrl).toHaveBeenCalledWith(
+        'cdc-documents',
+        'my-file.pdf',
+      );
       expect(prisma.retraitCdc.create).toHaveBeenCalledWith({
         data: {
           documentCdcId: 'doc-id',
           operateurId: 'op-id',
         },
       });
-      expect(result).toEqual({ downloadUrl: 'https://minio.local/download?sign' });
+      expect(result).toEqual({
+        downloadUrl: 'https://minio.local/download?sign',
+      });
     });
   });
 });

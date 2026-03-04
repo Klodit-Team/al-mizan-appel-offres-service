@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { Test, TestingModule } from '@nestjs/testing';
 import { StorageService } from './storage.service';
 import { ConfigService } from '@nestjs/config';
@@ -75,12 +76,14 @@ describe('StorageService', () => {
     });
 
     it('should throw an InternalServerErrorException if the upload fails', async () => {
-      const loggerSpy = jest.spyOn(console, 'error').mockImplementation(() => { });
+      const loggerSpy = jest
+        .spyOn(console, 'error')
+        .mockImplementation(() => {});
       sendMock.mockRejectedValueOnce(new Error('S3 Error'));
 
       await expect(
-        service.uploadFile('bucket', 'key', Buffer.from(''), 'text/plain')
-      ).rejects.toThrow('Erreur lors de l\'upload du fichier');
+        service.uploadFile('bucket', 'key', Buffer.from(''), 'text/plain'),
+      ).rejects.toThrow("Erreur lors de l'upload du fichier");
 
       expect(loggerSpy).toHaveBeenCalled();
       loggerSpy.mockRestore();
@@ -100,11 +103,15 @@ describe('StorageService', () => {
     });
 
     it('should throw an InternalServerErrorException if URL generation fails', async () => {
-      const loggerSpy = jest.spyOn(console, 'error').mockImplementation(() => { });
-      (getSignedUrl as jest.Mock).mockRejectedValueOnce(new Error('Sign Error'));
+      const loggerSpy = jest
+        .spyOn(console, 'error')
+        .mockImplementation(() => {});
+      (getSignedUrl as jest.Mock).mockRejectedValueOnce(
+        new Error('Sign Error'),
+      );
 
       await expect(
-        service.getPresignedDownloadUrl('bucket', 'key')
+        service.getPresignedDownloadUrl('bucket', 'key'),
       ).rejects.toThrow('Impossible de générer le lien');
 
       expect(loggerSpy).toHaveBeenCalled();

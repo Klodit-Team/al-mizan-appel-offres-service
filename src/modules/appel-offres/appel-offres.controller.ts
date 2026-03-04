@@ -51,7 +51,6 @@ export class AppelOffresController {
   }
 
   @Patch(':id/statut')
-  
   updateStatut(
     @Param('id') id: string,
     @Body() updateStatutDto: UpdateStatutDto,

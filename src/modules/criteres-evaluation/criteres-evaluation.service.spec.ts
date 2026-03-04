@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call */
 import { Test, TestingModule } from '@nestjs/testing';
 import { CriteresEvaluationService } from './criteres-evaluation.service';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -40,27 +41,43 @@ describe('CriteresEvaluationService', () => {
   });
 
   describe('create', () => {
-    it('doit lever NotFoundException si l\'AO n\'existe pas', async () => {
+    it("doit lever NotFoundException si l'AO n'existe pas", async () => {
       prisma.appelOffres.findUnique.mockResolvedValueOnce(null);
 
       await expect(
-        service.create('ao-id', { libelle: 'test', categorie: CategorieCritereEvaluation.TECHNIQUE, poids: 10 })
+        service.create('ao-id', {
+          libelle: 'test',
+          categorie: CategorieCritereEvaluation.TECHNIQUE,
+          poids: 10,
+        }),
       ).rejects.toThrow(NotFoundException);
     });
 
-    it('doit lever ConflictException si l\'AO n\'est pas BROUILLON', async () => {
-      prisma.appelOffres.findUnique.mockResolvedValueOnce({ statut: StatutAO.PUBLIE });
+    it("doit lever ConflictException si l'AO n'est pas BROUILLON", async () => {
+      prisma.appelOffres.findUnique.mockResolvedValueOnce({
+        statut: StatutAO.PUBLIE,
+      });
 
       await expect(
-        service.create('ao-id', { libelle: 'test', categorie: CategorieCritereEvaluation.TECHNIQUE, poids: 10 })
+        service.create('ao-id', {
+          libelle: 'test',
+          categorie: CategorieCritereEvaluation.TECHNIQUE,
+          poids: 10,
+        }),
       ).rejects.toThrow(ConflictException);
     });
 
-    it('doit créer le critère si l\'AO est BROUILLON', async () => {
-      prisma.appelOffres.findUnique.mockResolvedValueOnce({ statut: StatutAO.BROUILLON });
+    it("doit créer le critère si l'AO est BROUILLON", async () => {
+      prisma.appelOffres.findUnique.mockResolvedValueOnce({
+        statut: StatutAO.BROUILLON,
+      });
       prisma.critereEvaluation.create.mockResolvedValueOnce({ id: 'crit-1' });
 
-      const result = await service.create('ao-id', { libelle: 'test', categorie: CategorieCritereEvaluation.TECHNIQUE, poids: 10 });
+      const result = await service.create('ao-id', {
+        libelle: 'test',
+        categorie: CategorieCritereEvaluation.TECHNIQUE,
+        poids: 10,
+      });
 
       expect(prisma.critereEvaluation.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
@@ -74,27 +91,35 @@ describe('CriteresEvaluationService', () => {
   });
 
   describe('findAll', () => {
-    it('doit retourner les critères de l\'AO', async () => {
+    it("doit retourner les critères de l'AO", async () => {
       prisma.appelOffres.findUnique.mockResolvedValueOnce({ id: 'ao-id' });
-      prisma.critereEvaluation.findMany.mockResolvedValueOnce([{ id: 'crit-1' }]);
+      prisma.critereEvaluation.findMany.mockResolvedValueOnce([
+        { id: 'crit-1' },
+      ]);
 
       const result = await service.findAll('ao-id');
-      expect(prisma.critereEvaluation.findMany).toHaveBeenCalledWith({ where: { aoId: 'ao-id' } });
+      expect(prisma.critereEvaluation.findMany).toHaveBeenCalledWith({
+        where: { aoId: 'ao-id' },
+      });
       expect(result).toEqual([{ id: 'crit-1' }]);
     });
   });
 
   describe('findOne', () => {
-    it('doit lever NotFoundException si le critère n\'est pas trouvé dans cet AO', async () => {
+    it("doit lever NotFoundException si le critère n'est pas trouvé dans cet AO", async () => {
       prisma.appelOffres.findUnique.mockResolvedValueOnce({ id: 'ao-id' });
       prisma.critereEvaluation.findUnique.mockResolvedValueOnce(null);
 
-      await expect(service.findOne('ao-id', 'crit-id')).rejects.toThrow(NotFoundException);
+      await expect(service.findOne('ao-id', 'crit-id')).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('doit retourner le critère demandé', async () => {
       prisma.appelOffres.findUnique.mockResolvedValueOnce({ id: 'ao-id' });
-      prisma.critereEvaluation.findUnique.mockResolvedValueOnce({ id: 'crit-id' });
+      prisma.critereEvaluation.findUnique.mockResolvedValueOnce({
+        id: 'crit-id',
+      });
 
       const result = await service.findOne('ao-id', 'crit-id');
       expect(result).toEqual({ id: 'crit-id' });
@@ -102,19 +127,32 @@ describe('CriteresEvaluationService', () => {
   });
 
   describe('update', () => {
-    it('doit lever ConflictException si le critère n\'appartient pas à l\'AO', async () => {
+    it("doit lever ConflictException si le critère n'appartient pas à l'AO", async () => {
       prisma.appelOffres.findUnique.mockResolvedValueOnce({ id: 'ao-id' });
-      prisma.critereEvaluation.findUnique.mockResolvedValueOnce({ id: 'crit-id', aoId: 'other-ao' });
+      prisma.critereEvaluation.findUnique.mockResolvedValueOnce({
+        id: 'crit-id',
+        aoId: 'other-ao',
+      });
 
-      await expect(service.update('ao-id', 'crit-id', { libelle: 'new' })).rejects.toThrow(ConflictException);
+      await expect(
+        service.update('ao-id', 'crit-id', { libelle: 'new' }),
+      ).rejects.toThrow(ConflictException);
     });
 
     it('doit mettre à jour le critère', async () => {
       prisma.appelOffres.findUnique.mockResolvedValueOnce({ id: 'ao-id' });
-      prisma.critereEvaluation.findUnique.mockResolvedValueOnce({ id: 'crit-id', aoId: 'ao-id' });
-      prisma.critereEvaluation.update.mockResolvedValueOnce({ id: 'crit-id', libelle: 'new' });
+      prisma.critereEvaluation.findUnique.mockResolvedValueOnce({
+        id: 'crit-id',
+        aoId: 'ao-id',
+      });
+      prisma.critereEvaluation.update.mockResolvedValueOnce({
+        id: 'crit-id',
+        libelle: 'new',
+      });
 
-      const result = await service.update('ao-id', 'crit-id', { libelle: 'new' });
+      const result = await service.update('ao-id', 'crit-id', {
+        libelle: 'new',
+      });
 
       expect(prisma.critereEvaluation.update).toHaveBeenCalledWith({
         where: { id: 'crit-id' },
@@ -125,21 +163,31 @@ describe('CriteresEvaluationService', () => {
   });
 
   describe('remove', () => {
-    it('doit lever Error si le critère n\'appartient pas à l\'AO', async () => {
+    it("doit lever Error si le critère n'appartient pas à l'AO", async () => {
       prisma.appelOffres.findUnique.mockResolvedValueOnce({ id: 'ao-id' });
-      prisma.critereEvaluation.findUnique.mockResolvedValueOnce({ id: 'crit-id', aoId: 'other-ao' });
+      prisma.critereEvaluation.findUnique.mockResolvedValueOnce({
+        id: 'crit-id',
+        aoId: 'other-ao',
+      });
 
-      await expect(service.remove('ao-id', 'crit-id')).rejects.toThrow("Le critère n'est pas lié à cet Appel d'Offres");
+      await expect(service.remove('ao-id', 'crit-id')).rejects.toThrow(
+        "Le critère n'est pas lié à cet Appel d'Offres",
+      );
     });
 
     it('doit supprimer le critère', async () => {
       prisma.appelOffres.findUnique.mockResolvedValueOnce({ id: 'ao-id' });
-      prisma.critereEvaluation.findUnique.mockResolvedValueOnce({ id: 'crit-id', aoId: 'ao-id' });
+      prisma.critereEvaluation.findUnique.mockResolvedValueOnce({
+        id: 'crit-id',
+        aoId: 'ao-id',
+      });
       prisma.critereEvaluation.delete.mockResolvedValueOnce({ id: 'crit-id' });
 
       const result = await service.remove('ao-id', 'crit-id');
 
-      expect(prisma.critereEvaluation.delete).toHaveBeenCalledWith({ where: { id: 'crit-id' } });
+      expect(prisma.critereEvaluation.delete).toHaveBeenCalledWith({
+        where: { id: 'crit-id' },
+      });
       expect(result).toEqual({ id: 'crit-id' });
     });
   });
