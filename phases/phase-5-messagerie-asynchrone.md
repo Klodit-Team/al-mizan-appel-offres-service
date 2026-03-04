@@ -301,3 +301,43 @@ Vérifie dans les logs NestJS que le handler est déclenché et que le statut pa
 | `src/modules/appel-offres/appel-offres.module.ts` | **MODIFIÉ** — Importe `MessagingModule`, déclare `RecoursConsumer` |
 | `src/app.module.ts` | **MODIFIÉ** — Importe `MessagingModule` au niveau global |
 | `src/main.ts` | **MODIFIÉ** — Mode hybride (HTTP + RabbitMQ consumer) |
+
+# Phase 5.5 : Couverture des Backlogs Manquants (Nettoyage avant la Phase 6) 🧹
+
+Lors des phases précédentes (CRUD, S3, RabbitMQ), le focus a été mis sur la mise en place de la **fondation architecturale**. Cela a permis de poser des bases solides, mais a entraîné l'occultation volontaire de certaines User Stories (US) "secondaires" ou de type CRUD basique. 
+Cette "phase 5.5" est là pour rattraper et finaliser le **périmètre métier complet** de l'application avant d'entamer les étapes de sécurité avancée et d'IA.
+
+Voici en détails comment ces 4 fonctionnalités fonctionnaient et comment elles ont été complétées :
+
+### 1. US n°6 : Publier un avis réglementaire (`AvisAo` Module)
+*   **Contexte Initial :** Auparavant, on mettait juste à jour le statut de l'Appel d'Offres à `PUBLIE`. Or, la loi exige un registre détaillé des publications réglementaires pour garantir la transparence vis-à-vis des opérateurs.
+*   **Ajouts Détaillés :**
+    *   Génération et mise en place complète du module de ressources `AvisAo` (`Controller`, `Service`, `DTOs`).
+    *   Création des DTOs de validation structurés pour tracer formellement l'avis : sélection du BOMOP, validation de la presse nationale, texte brut publicatoire.
+    *   Côté base de données (`Prisma`), chaque fois qu'un appel d'offres sort du type "brouillon", le responsable peut stocker la métadonnée précise de son annonce.
+
+### 2. US n°8 & n°9 : Prononcer l'attribution (`Attribution` Module)
+*   **Contexte Initial :** Le statut devenait `ATTRIBUE` et un événement asynchrone fixait les 10 jours légaux. Mais qui était l'attributaire ? Et pour quel lot précis et combien ? Rien n'était sauvegardé.
+*   **Ajouts Détaillés :**
+    *   Création intégrale du module `Attribution`.
+    *   Les points finaux REST (GET, POST, PATCH) permettent désormais d'enregistrer l'agrégation métier avec inclusion des relations vers l'entité `AppelOffres` et le `Lot` (via `lotId` et `aoId`).
+    *   Intégration d'un ensemble de validateurs NestJS (`class-validator` : `@IsPositive()`, `@IsDateString()`) permettant de justifier des montants attribués stricts (évitant les erreurs de frappe) et le timestamp du calcul de délai de recours.
+
+### 3. US n°10 : Créer la fiche marché (`Marche` Module)
+*   **Contexte Initial :** Une fois le recours terminé (clôturé ou non-déposé), l'entreprise passe devant le signataire pour la formalisation par étape contractuelle finale.
+*   **Ajouts Détaillés :**
+    *   Développement du module lié à la relation "Un à Un" : `Marche`.
+    *   Sécurisation avec DTOs documentés via OpenAPI (`@ApiProperty`) rendant obligatoire la `referenceMarche`, le `montantSigne` consenti et le calcul en nombre entier (`@IsInt()`) du `delaiExecution` en jours. 
+    *   La création d'un contrat retourne l'objet enrichi des détails initiaux de l'offre et l'attribution.
+
+### 4. US n°14 : Consulter les AO publiés (Filtres & Pagination Dynamiques)
+*   **Contexte Initial :** Le contrôleur `[GET] /appels-offres` affichait 100% de la table, sans distinctions, rendant fouillis toute interface client à plus de 100 enregistrements.
+*   **Ajouts Détaillés :**
+    *   Utilisation complète de la puissance Prisma pour traiter une requête de filtrage issue d'un `FindAllAppelOffresDto` typé.
+    *   Construction du critère de recherche avancé de type **insensible à la casse** (`mode: 'insensitive'`) pour l'Opérateur Économique, capable de filtrer indifféremment sur des fragments de la `wilaya` ("alg" matchera "Alger") ou du `secteurActivite`.
+    *   **Pagination Implémentée** (Mots clés Prisma : `skip`, `take`, retour d'un dictionnaire Meta avec le nom des variables `totalPages`, `limit` et `page`) permettant une navigation aisée aux interfaces clients.
+
+---
+
+> 🎉 **Tous les backlogs de base des Opérateurs/Services sont désormais couverts (hors authentification).** Le code est à 100% propre (ESLint passe sans heurts), et les tests automatisés sont inclus (`X` tests Unitaires avec Jest sont fonctionnels).
+> La voie est libre pour la Phase 6 !

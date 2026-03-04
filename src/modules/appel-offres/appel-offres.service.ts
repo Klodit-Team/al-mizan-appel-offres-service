@@ -7,6 +7,7 @@ import {
 import * as crypto from 'crypto';
 import { CreateAppelOffreDto } from './dto/create-appel-offre.dto';
 import { UpdateAppelOffreDto } from './dto/update-appel-offre.dto';
+import { FindAllAppelOffresDto } from './dto/find-all-appel-offre.dto';
 import { PrismaService } from '../../prisma/prisma.service';
 import { StorageService } from '../../storage/storage.service';
 import { StatutAO } from '@prisma/client';
@@ -40,8 +41,50 @@ export class AppelOffresService {
     return ao;
   }
 
-  findAll() {
-    return this.prisma.appelOffres.findMany();
+  async findAll(query?: FindAllAppelOffresDto) {
+    if (!query) {
+      return this.prisma.appelOffres.findMany();
+    }
+
+    const {
+      wilaya,
+      secteurActivite,
+      typeProcedure,
+      statut,
+      page = 1,
+      limit = 10,
+    } = query;
+    const skip = (page - 1) * limit;
+
+    const where: import('@prisma/client').Prisma.AppelOffresWhereInput = {};
+    if (wilaya) where.wilaya = { contains: wilaya, mode: 'insensitive' };
+    if (secteurActivite)
+      where.secteurActivite = {
+        contains: secteurActivite,
+        mode: 'insensitive',
+      };
+    if (typeProcedure) where.typeProcedure = typeProcedure;
+    if (statut) where.statut = statut;
+
+    const [data, total] = await Promise.all([
+      this.prisma.appelOffres.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.appelOffres.count({ where }),
+    ]);
+
+    return {
+      data,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
   }
 
   async findOne(id: string) {

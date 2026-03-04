@@ -9,6 +9,9 @@ import { CriteresEligibiliteModule } from './modules/criteres-eligibilite/criter
 import { CriteresEvaluationModule } from './modules/criteres-evaluation/criteres-evaluation.module';
 import { StorageModule } from './storage/storage.module';
 import { MessagingModule } from './messaging/messaging.module';
+import { AvisAoModule } from './modules/avis-ao/avis-ao.module';
+import { AttributionModule } from './modules/attribution/attribution.module';
+import { MarcheModule } from './modules/marche/marche.module';
 
 @Module({
   imports: [
@@ -43,6 +46,12 @@ import { MessagingModule } from './messaging/messaging.module';
 
     // Messagerie RabbitMQ (Publisher + Consumer enregistrés dans AppelOffresModule)
     MessagingModule,
+
+    AvisAoModule,
+
+    AttributionModule,
+
+    MarcheModule,
   ],
   controllers: [],
   providers: [],

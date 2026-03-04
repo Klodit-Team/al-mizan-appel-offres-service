@@ -111,23 +111,21 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      # --- NOTIFICATION DISCORD ---
-#      - name: 📢 Notifier l'équipe sur Discord
-#        if: success()
-#        env:
-#          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
-#        run: |
-#          # Si le webhook n'est pas configuré, on ne fait rien
-#          if [ -z "$DISCORD_WEBHOOK" ]; then
-#            echo "La variable DISCORD_WEBHOOK n'est pas définie."
-#            exit 0
-#          fi
-#
-#          # Nettoyage du message de commit pour qu'il soit propre en JSON
-#          COMMIT_MSG=$(echo "${{ github.event.head_commit.message }}" | awk '{printf "%s\\n", $0}')
-#
-#          curl -H "Content-Type: application/json" \
-#          -d "{
-#            \"content\": \"✅ **Succès du Pipeline CI/CD - Al-Mizan (Microservice Appels d'Offres)** 🚀\n\n👤 **Auteur:** \`${{ github.actor }}\`\n📝 **Mise à jour (Ce qui a été ajouté):**\n\`\`\`\n$COMMIT_MSG\`\`\`\n🔗 **Voir le commit:** ${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}\"
-#          }" \
-#          "$DISCORD_WEBHOOK"
+      #--- NOTIFICATION DISCORD ---
+      - name: 📢 Notifier l'équipe sur Discord
+        if: success()
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        run: |
+          # Si le webhook n'est pas configuré, on ne fait rien
+          if [ -z "$DISCORD_WEBHOOK" ]; then
+            echo "La variable DISCORD_WEBHOOK n'est pas définie."
+            exit 0
+          fi
+          # Nettoyage du message de commit pour qu'il soit propre en JSON
+          COMMIT_MSG=$(echo "${{ github.event.head_commit.message }}" | awk '{printf "%s\\n", $0}')
+          curl -H "Content-Type: application/json" \
+          -d "{
+            \"content\": \"✅ **Succès du Pipeline CI/CD - Al-Mizan (Microservice Appels d'Offres)** 🚀\n\n👤 **Auteur:** \`${{ github.actor }}\`\n📝 **Mise à jour (Ce qui a été ajouté):**\n\`\`\`\n$COMMIT_MSG\`\`\`\n🔗 **Voir le commit:** ${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}\"
+          }" \
+          "$DISCORD_WEBHOOK"

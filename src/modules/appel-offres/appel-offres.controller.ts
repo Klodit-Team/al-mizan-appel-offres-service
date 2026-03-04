@@ -9,6 +9,7 @@ import {
   UseInterceptors,
   UploadedFile,
   BadRequestException,
+  Query,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiConsumes, ApiOperation } from '@nestjs/swagger';
@@ -17,6 +18,7 @@ import { CreateAppelOffreDto } from './dto/create-appel-offre.dto';
 import { UpdateAppelOffreDto } from './dto/update-appel-offre.dto';
 import { UpdateStatutDto } from './dto/update-statut.dto';
 import { UploadCdcDto } from './dto/upload-cdc.dto';
+import { FindAllAppelOffresDto } from './dto/find-all-appel-offre.dto';
 
 @Controller('appel-offres')
 export class AppelOffresController {
@@ -28,8 +30,11 @@ export class AppelOffresController {
   }
 
   @Get()
-  findAll() {
-    return this.appelOffresService.findAll();
+  @ApiOperation({
+    summary: "Lister les Appels d'Offres avec filtres et pagination",
+  })
+  findAll(@Query() query: FindAllAppelOffresDto) {
+    return this.appelOffresService.findAll(query);
   }
 
   @Get(':id')

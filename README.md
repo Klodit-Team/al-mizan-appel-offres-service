@@ -347,12 +347,15 @@ Client / API Gateway
    - Génération dynamique de `Presigned URLs` pour le téléchargement direct.
    - Traçabilité stricte des retraits (`retrait_cdc`) afin de conserver la trace légale de l'Opérateur accédant au document.
 
-### Prochaines étapes : Les 2 Phases restantes
+8. **Asynchronisme avec RabbitMQ (Phase 5 VALIDÉE)** :
+   - Pattern Publisher/Consumer pour déléguer les notifications et l'audit aux autres microservices.
+9. **Rattrapage des Backlogs (Phase 5.5 VALIDÉE)** :
+   - Implémentation complète de l'Avis réglementaire (`AvisAo`), de l'`Attribution` et de la Fiche `Marche`.
+   - L'endpoint listant les Appels d'Offres permet maintenant une recherche filtrée dynamique avec pagination, de façon insensible à la casse.
 
-Nous continuons le développement fonctionnel :
+### Prochaines étapes : La Dernière Phase !
 
-- **Phase 5** : Publier dans l'event-bus `RabbitMQ` pour informer les autres microservices.
-- **Phase 6** : Les Workflows complexes via IA, le Gré-à-Gré et l'intégration du RBAC (`@Roles(...)`).
+- **Phase 6** : Sécurité avec le RBAC (`@Roles(...)`) et intégration avec les Workflows d'Intelligence Artificielle (Gré-à-Gré).
 
 ### 📊 Suivi du Backlog Fonctionnel (15 User Stories)
 
@@ -363,34 +366,33 @@ Nous continuons le développement fonctionnel :
 |  ✅  | 3   | **Publier / retirer le CDC** (upload avec prix de retrait, accès OE)           | SC           | 🔴 Haute   |
 |  ✅  | 4   | **Définir les critères d'éligibilité** (CA min, expérience, certifications)    | SC           | 🔴 Haute   |
 |  ✅  | 5   | **Définir les critères d'évaluation** (technique + financier, pondération%)    | SC           | 🔴 Haute   |
-|  ⬜  | 6   | **Publier un avis réglementaire** (AO, attribution prov./déf., annulation)     | SC           | 🔴 Haute   |
+|  ✅  | 6   | **Publier un avis réglementaire** (AO, attribution prov./déf., annulation)     | SC           | 🔴 Haute   |
 |  ✅  | 7   | **Machine à états du cycle de vie** : `BROUILLON → PUBLIE → ... → ATTRIBUE`    | SC / Système | 🔴 Haute   |
-|  ⬜  | 8   | **Prononcer l'attribution provisoire** (lancer période recours)                | SC           | 🔴 Haute   |
-|  ⬜  | 9   | **Prononcer l'attribution définitive** (après expiration recours)              | SC           | 🔴 Haute   |
-|  ⬜  | 10  | **Créer la fiche marché** (formalisation contractuelle)                        | SC           | 🟡 Moyenne |
+|  ✅  | 8   | **Prononcer l'attribution provisoire** (lancer période recours)                | SC           | 🔴 Haute   |
+|  ✅  | 9   | **Prononcer l'attribution définitive** (après expiration recours)              | SC           | 🔴 Haute   |
+|  ✅  | 10  | **Créer la fiche marché** (formalisation contractuelle)                        | SC           | 🟡 Moyenne |
 |  ⬜  | 11  | **Soumettre une demande gré-à-gré** (justifications + pièces obligatoires)     | SC           | 🟡 Moyenne |
 |  ⬜  | 12  | **Analyse IA d'une demande gré-à-gré** (score de conformité + recommandation)  | Système / IA | 🟡 Moyenne |
 |  ⬜  | 13  | **Valider / rejeter une demande gré-à-gré** (comparaison recommandation IA)    | Contrôleur   | 🟡 Moyenne |
 |  ✅  | 14  | **Consulter les AO publiés** (filtres : type, wilaya, secteur — pagination)    | OE           | 🔴 Haute   |
 |  ✅  | 15  | **Retirer le CDC** (téléchargement avec traçabilité + URL présignée)           | OE           | 🔴 Haute   |
 
-> **Progression : 8 / 15 User Stories livrées** (Phases 1, 2, 3 & 4 complètes)
+> **Progression : 12 / 15 User Stories livrées** (Phases 1, 2, 3, 4, 5 & 5.5 complètes)
 
 ### 🧪 Couverture des Tests Unitaires (Jest)
 
-La suite de tests a été exécutée avec succès (`56 tests passed` sur `10 Test Suites`). Tous les accès externes (PostgreSQL via Prisma, MinIO via AWS SDK) sont intégralement mockés.
+La suite de tests a été exécutée avec succès (`95 tests passed` sur `16 Test Suites`). Tous les accès externes (PostgreSQL via Prisma, MinIO via AWS SDK) sont intégralement mockés.
 
-| Composant | Fichier Testé | Méthodes Validées | Comportements Clés Testés |
+| Composant | Fiche(s) | Méthodes Validées | Comportements Clés Testés |
 | :--- | :--- | :--- | :--- |
-| **Storage (S3)** | `storage.service.spec.ts` | `uploadFile`<br>`getPresignedDownloadUrl` | Format S3 des URI, Paramètres AWS `PutObjectCommand`/`GetObjectCommand`, Exceptions. |
-| **AppelOffres (Controller)**  | `appel-offres.controller.spec.ts` | `uploadCdc`<br>`getCdcDownloadUrl` | Levée `BadRequestException` si fichier absent, Mocking strict du Service. |
-| **AppelOffres (Service)** | `appel-offres.service.spec.ts` | `uploadCdc`<br>`getPresignedDownloadUrl` | Hachage, Règles métier (Statut BROUILLON/Conflict), Enregistrement Traçabilité. |
-| **Lots (Controller)** | `lots.controller.spec.ts` | `create`<br>`findAll` | Transfert correct des requêtes et DTOs vers le constructeur du service métier. |
-| **Lots (Service)** | `lots.service.spec.ts` | `create`<br>`findAll` | Assertions `NotFoundException` (AO inexistant), `ConflictException` (Statut AO invalide). |
-| **Eligibilité (Controller)** | `criteres-eligibilite.controller.spec.ts` | `create`<br>`findAll`<br>`findOne` ... | Vérification que le routing vers le service (arguments multiples) est optimal. |
-| **Eligibilité (Service)** | `criteres-eligibilite.service.spec.ts` | `create`<br>`findAll`<br>`update` ... | Exceptions de liens (Critère non lié à l'AO ciblé), Updates stricts, Enumérations. |
-| **Évaluation (Controller)** | `criteres-evaluation.controller.spec.ts` | `create`<br>`update`<br>`delete` ... | Validation du pipeline NestJS depuis l'injection du Service. |
-| **Évaluation (Service)** | `criteres-evaluation.service.spec.ts` | `create`<br>`findAll`<br>`remove` ... | Interdictions formelles d'altération si conditions ou hiérarchie (aoId) non réunies. |
+| **Storage (S3)** | `storage.service.spec.ts` | `uploadFile`, `getPresignedDownloadUrl` | Configuration client S3, paramètres AWS `PutObjectCommand`, Exceptions. |
+| **AppelOffres**  | `Controller` & `Service` | `uploadCdc`, endpoints CRUD... | Hachage du CDC, règles métiers strictes de la machine à état, URLs présignées MinIO. |
+| **Lots** | `Controller` & `Service` | Endpoints CRUD | Transferts DTO, exceptions liées au statut AO (`ConflictException`). |
+| **Éligibilité** | `Controller` & `Service` | Endpoints CRUD | Routing des arguments liés à l'AO, types énumérés, associations inter-tables. |
+| **Évaluation** | `Controller` & `Service` | Endpoints CRUD | Impossibilité d'altération sans relations correctes, validations `@nestjs/swagger`. |
+| **AvisAo** | `Controller` & `Service` | Endpoints CRUD | Mocks des méthodes de publications BOMOP et Presse, injection module Prisma isolée. |
+| **Attribution** | `Controller` & `Service` | Endpoints CRUD | Validation complète du DTO d'attribution (`montantAttribue`, timestamp etc.), mock Prisma. |
+| **Marche** | `Controller` & `Service` | Endpoints CRUD | Process correct de contrat, signature, délais, sans impacter la base de données réelle. |
 
 ---
 
