@@ -1,11 +1,11 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument */
 import { Test, TestingModule } from '@nestjs/testing';
 import { CriteresEvaluationController } from './criteres-evaluation.controller';
 import { CriteresEvaluationService } from './criteres-evaluation.service';
+import { CreateCriteresEvaluationDto } from './dto/create-criteres-evaluation.dto';
+import { UpdateCriteresEvaluationDto } from './dto/update-criteres-evaluation.dto';
 
 describe('CriteresEvaluationController', () => {
   let controller: CriteresEvaluationController;
-  let service: any;
 
   const mockCriteresEvaluationService = {
     create: jest.fn(),
@@ -31,7 +31,6 @@ describe('CriteresEvaluationController', () => {
     controller = module.get<CriteresEvaluationController>(
       CriteresEvaluationController,
     );
-    service = module.get<CriteresEvaluationService>(CriteresEvaluationService);
   });
 
   it('should be defined', () => {
@@ -41,10 +40,13 @@ describe('CriteresEvaluationController', () => {
   describe('create', () => {
     it('doit appeler le service avec les bons paramètres', async () => {
       mockCriteresEvaluationService.create.mockResolvedValueOnce({ id: 'c1' });
-      const dto = { libelle: 'test' } as any;
+      const dto = { libelle: 'test' } as CreateCriteresEvaluationDto;
 
       const result = await controller.create('ao-id', dto);
-      expect(service.create).toHaveBeenCalledWith('ao-id', dto);
+      expect(mockCriteresEvaluationService.create).toHaveBeenCalledWith(
+        'ao-id',
+        dto,
+      );
       expect(result).toEqual({ id: 'c1' });
     });
   });
@@ -56,7 +58,9 @@ describe('CriteresEvaluationController', () => {
       ]);
 
       const result = await controller.findAll('ao-id');
-      expect(service.findAll).toHaveBeenCalledWith('ao-id');
+      expect(mockCriteresEvaluationService.findAll).toHaveBeenCalledWith(
+        'ao-id',
+      );
       expect(result).toEqual([{ id: 'c1' }]);
     });
   });
@@ -66,7 +70,10 @@ describe('CriteresEvaluationController', () => {
       mockCriteresEvaluationService.findOne.mockResolvedValueOnce({ id: 'c1' });
 
       const result = await controller.findOne('ao-id', 'c1');
-      expect(service.findOne).toHaveBeenCalledWith('ao-id', 'c1');
+      expect(mockCriteresEvaluationService.findOne).toHaveBeenCalledWith(
+        'ao-id',
+        'c1',
+      );
       expect(result).toEqual({ id: 'c1' });
     });
   });
@@ -74,10 +81,14 @@ describe('CriteresEvaluationController', () => {
   describe('update', () => {
     it('doit appeler le service avec aoId, id et dto', async () => {
       mockCriteresEvaluationService.update.mockResolvedValueOnce({ id: 'c1' });
-      const dto = { libelle: 'test' } as any;
+      const dto = { libelle: 'test' } as UpdateCriteresEvaluationDto;
 
       const result = await controller.update('ao-id', 'c1', dto);
-      expect(service.update).toHaveBeenCalledWith('ao-id', 'c1', dto);
+      expect(mockCriteresEvaluationService.update).toHaveBeenCalledWith(
+        'ao-id',
+        'c1',
+        dto,
+      );
       expect(result).toEqual({ id: 'c1' });
     });
   });
@@ -87,7 +98,10 @@ describe('CriteresEvaluationController', () => {
       mockCriteresEvaluationService.remove.mockResolvedValueOnce({ id: 'c1' });
 
       const result = await controller.remove('ao-id', 'c1');
-      expect(service.remove).toHaveBeenCalledWith('ao-id', 'c1');
+      expect(mockCriteresEvaluationService.remove).toHaveBeenCalledWith(
+        'ao-id',
+        'c1',
+      );
       expect(result).toEqual({ id: 'c1' });
     });
   });

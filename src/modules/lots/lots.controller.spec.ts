@@ -1,11 +1,9 @@
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import { Test, TestingModule } from '@nestjs/testing';
 import { LotsController } from './lots.controller';
 import { LotsService } from './lots.service';
 
 describe('LotsController', () => {
   let controller: LotsController;
-  let service: any;
 
   const mockLotsService = {
     create: jest.fn(),
@@ -26,7 +24,6 @@ describe('LotsController', () => {
     }).compile();
 
     controller = module.get<LotsController>(LotsController);
-    service = module.get<LotsService>(LotsService);
   });
 
   it('should be defined', () => {
@@ -40,7 +37,7 @@ describe('LotsController', () => {
       const dto = { numero: '1', designation: 'Lot 1', montantEstime: 100 };
       const result = await controller.create('uuid', dto);
 
-      expect(service.create).toHaveBeenCalledWith('uuid', dto);
+      expect(mockLotsService.create).toHaveBeenCalledWith('uuid', dto);
       expect(result).toEqual({ id: 'lot-1' });
     });
   });
@@ -51,7 +48,7 @@ describe('LotsController', () => {
 
       const result = await controller.findAll('uuid');
 
-      expect(service.findAll).toHaveBeenCalledWith('uuid');
+      expect(mockLotsService.findAll).toHaveBeenCalledWith('uuid');
       expect(result).toEqual([{ id: 'lot-1' }]);
     });
   });

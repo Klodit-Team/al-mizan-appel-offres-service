@@ -5,7 +5,7 @@ import { BadRequestException } from '@nestjs/common';
 
 describe('AppelOffresController', () => {
   let controller: AppelOffresController;
-  let service: jest.Mocked<AppelOffresService>;
+  // service est obtenu via le module NestJS (utilisé pour les mocks)
 
   const mockAppelOffresService = {
     create: jest.fn(),
@@ -32,7 +32,6 @@ describe('AppelOffresController', () => {
     }).compile();
 
     controller = module.get<AppelOffresController>(AppelOffresController);
-    service = module.get<AppelOffresService>(AppelOffresService);
   });
 
   it('should be defined', () => {
@@ -64,7 +63,7 @@ describe('AppelOffresController', () => {
         mockFile,
       );
 
-      expect(service.uploadCdc).toHaveBeenCalledWith(
+      expect(mockAppelOffresService.uploadCdc).toHaveBeenCalledWith(
         'ao-id',
         mockFile.buffer,
         mockFile.mimetype,
@@ -82,10 +81,9 @@ describe('AppelOffresController', () => {
 
       const result = await controller.getCdcDownloadUrl('ao-id');
 
-      expect(service.getPresignedDownloadUrl).toHaveBeenCalledWith(
-        'ao-id',
-        '123e4567-e89b-12d3-a456-426614174000',
-      );
+      expect(
+        mockAppelOffresService.getPresignedDownloadUrl,
+      ).toHaveBeenCalledWith('ao-id', '123e4567-e89b-12d3-a456-426614174000');
       expect(result).toEqual({ downloadUrl: 'http://test' });
     });
   });

@@ -1,11 +1,11 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument */
 import { Test, TestingModule } from '@nestjs/testing';
 import { CriteresEligibiliteController } from './criteres-eligibilite.controller';
 import { CriteresEligibiliteService } from './criteres-eligibilite.service';
+import { UpdateCriteresEligibiliteDto } from './dto/update-criteres-eligibilite.dto';
+import { CreateCriteresEligibiliteDto } from './dto/create-criteres-eligibilite.dto';
 
 describe('CriteresEligibiliteController', () => {
   let controller: CriteresEligibiliteController;
-  let service: any;
 
   const mockCriteresEligibiliteService = {
     create: jest.fn(),
@@ -31,9 +31,6 @@ describe('CriteresEligibiliteController', () => {
     controller = module.get<CriteresEligibiliteController>(
       CriteresEligibiliteController,
     );
-    service = module.get<CriteresEligibiliteService>(
-      CriteresEligibiliteService,
-    );
   });
 
   it('should be defined', () => {
@@ -43,10 +40,13 @@ describe('CriteresEligibiliteController', () => {
   describe('create', () => {
     it('doit appeler le service avec les bons paramètres', async () => {
       mockCriteresEligibiliteService.create.mockResolvedValueOnce({ id: 'c1' });
-      const dto = { libelle: 'test' } as any;
+      const dto = { libelle: 'test' } as CreateCriteresEligibiliteDto;
 
       const result = await controller.create('ao-id', dto);
-      expect(service.create).toHaveBeenCalledWith('ao-id', dto);
+      expect(mockCriteresEligibiliteService.create).toHaveBeenCalledWith(
+        'ao-id',
+        dto,
+      );
       expect(result).toEqual({ id: 'c1' });
     });
   });
@@ -58,7 +58,9 @@ describe('CriteresEligibiliteController', () => {
       ]);
 
       const result = await controller.findAll('ao-id');
-      expect(service.findAll).toHaveBeenCalledWith('ao-id');
+      expect(mockCriteresEligibiliteService.findAll).toHaveBeenCalledWith(
+        'ao-id',
+      );
       expect(result).toEqual([{ id: 'c1' }]);
     });
   });
@@ -70,7 +72,10 @@ describe('CriteresEligibiliteController', () => {
       });
 
       const result = await controller.findOne('ao-id', 'c1');
-      expect(service.findOne).toHaveBeenCalledWith('ao-id', 'c1');
+      expect(mockCriteresEligibiliteService.findOne).toHaveBeenCalledWith(
+        'ao-id',
+        'c1',
+      );
       expect(result).toEqual({ id: 'c1' });
     });
   });
@@ -78,10 +83,14 @@ describe('CriteresEligibiliteController', () => {
   describe('update', () => {
     it('doit appeler le service avec aoId, id et dto', async () => {
       mockCriteresEligibiliteService.update.mockResolvedValueOnce({ id: 'c1' });
-      const dto = { libelle: 'test' } as any;
+      const dto = { libelle: 'test' } as UpdateCriteresEligibiliteDto;
 
       const result = await controller.update('ao-id', 'c1', dto);
-      expect(service.update).toHaveBeenCalledWith('ao-id', 'c1', dto);
+      expect(mockCriteresEligibiliteService.update).toHaveBeenCalledWith(
+        'ao-id',
+        'c1',
+        dto,
+      );
       expect(result).toEqual({ id: 'c1' });
     });
   });
@@ -91,7 +100,10 @@ describe('CriteresEligibiliteController', () => {
       mockCriteresEligibiliteService.remove.mockResolvedValueOnce({ id: 'c1' });
 
       const result = await controller.remove('ao-id', 'c1');
-      expect(service.remove).toHaveBeenCalledWith('ao-id', 'c1');
+      expect(mockCriteresEligibiliteService.remove).toHaveBeenCalledWith(
+        'ao-id',
+        'c1',
+      );
       expect(result).toEqual({ id: 'c1' });
     });
   });
