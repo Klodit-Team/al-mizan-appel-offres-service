@@ -9,7 +9,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 
 @Injectable()
 export class CriteresEligibiliteService {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
 
   // ─── Méthode utilitaire privée (évite la duplication du 404) ──────────────
   private async findAoOrFail(aoId: string) {
@@ -101,4 +101,3 @@ export class CriteresEligibiliteService {
     });
   }
 }
-

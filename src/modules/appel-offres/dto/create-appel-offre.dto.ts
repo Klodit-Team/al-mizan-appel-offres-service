@@ -25,8 +25,8 @@ export class CreateAppelOffreDto {
     description: "L'objet ou titre du marché",
     example: 'Acquisition de PC Portables',
   })
-  @IsString({ message: 'L\'objet doit être une chaîne de caractères' })
-  @IsNotEmpty({ message: 'L\'objet est requis' })
+  @IsString({ message: "L'objet doit être une chaîne de caractères" })
+  @IsNotEmpty({ message: "L'objet est requis" })
   objet: string;
 
   @ApiProperty({
@@ -73,7 +73,7 @@ export class CreateAppelOffreDto {
   @IsUUID('4', {
     message: "L'ID du service contractant doit être un UUID valide",
   })
-  @IsNotEmpty({ message: 'L\'ID du service contractant est requis' })
+  @IsNotEmpty({ message: "L'ID du service contractant est requis" })
   serviceContractantId: string;
 
   @ApiProperty({ description: 'La Wilaya concernée', example: 'Alger' })
@@ -85,7 +85,9 @@ export class CreateAppelOffreDto {
     description: "Domaine d'activité du marché",
     example: 'Informatique & High-Tech',
   })
-  @IsString({ message: 'Le secteur d\'activité doit être une chaîne de caractères' })
-  @IsNotEmpty({ message: 'Le secteur d\'activité est requis' })
+  @IsString({
+    message: "Le secteur d'activité doit être une chaîne de caractères",
+  })
+  @IsNotEmpty({ message: "Le secteur d'activité est requis" })
   secteurActivite: string;
 }

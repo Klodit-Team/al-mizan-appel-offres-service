@@ -18,43 +18,71 @@ import { UpdateCriteresEvaluationDto } from './dto/update-criteres-evaluation.dt
 export class CriteresEvaluationController {
   constructor(
     private readonly criteresEvaluationService: CriteresEvaluationService,
-  ) { }
+  ) {}
 
   @Post()
-  @ApiOperation({ summary: 'Ajouter un critère d\'évaluation à un Appel d\'Offres' })
-  @ApiParam({ name: 'aoId', description: 'UUID de l\'Appel d\'Offres', type: String })
+  @ApiOperation({
+    summary: "Ajouter un critère d'évaluation à un Appel d'Offres",
+  })
+  @ApiParam({
+    name: 'aoId',
+    description: "UUID de l'Appel d'Offres",
+    type: String,
+  })
   create(
     @Param('aoId', ParseUUIDPipe) aoId: string,
     @Body() createCriteresEvaluationDto: CreateCriteresEvaluationDto,
   ) {
-    return this.criteresEvaluationService.create(aoId, createCriteresEvaluationDto);
+    return this.criteresEvaluationService.create(
+      aoId,
+      createCriteresEvaluationDto,
+    );
   }
 
   @Get()
-  @ApiOperation({ summary: 'Lister tous les critères d\'évaluation d\'un Appel d\'Offres' })
-  @ApiParam({ name: 'aoId', description: 'UUID de l\'Appel d\'Offres', type: String })
+  @ApiOperation({
+    summary: "Lister tous les critères d'évaluation d'un Appel d'Offres",
+  })
+  @ApiParam({
+    name: 'aoId',
+    description: "UUID de l'Appel d'Offres",
+    type: String,
+  })
   findAll(@Param('aoId', ParseUUIDPipe) aoId: string) {
     return this.criteresEvaluationService.findAll(aoId);
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Obtenir un critère d\'évaluation par son ID' })
-  @ApiParam({ name: 'aoId', description: 'UUID de l\'Appel d\'Offres', type: String })
-  @ApiParam({ name: 'id', description: 'UUID du critère d\'évaluation', type: String })
+  @ApiOperation({ summary: "Obtenir un critère d'évaluation par son ID" })
+  @ApiParam({
+    name: 'aoId',
+    description: "UUID de l'Appel d'Offres",
+    type: String,
+  })
+  @ApiParam({
+    name: 'id',
+    description: "UUID du critère d'évaluation",
+    type: String,
+  })
   findOne(
     @Param('aoId', ParseUUIDPipe) aoId: string,
     @Param('id', ParseUUIDPipe) id: string,
   ) {
-    return this.criteresEvaluationService.findOne(
-      aoId,
-      id,
-    );
+    return this.criteresEvaluationService.findOne(aoId, id);
   }
 
   @Patch(':id')
-  @ApiOperation({ summary: 'Mettre à jour un critère d\'évaluation' })
-  @ApiParam({ name: 'aoId', description: 'UUID de l\'Appel d\'Offres', type: String })
-  @ApiParam({ name: 'id', description: 'UUID du critère d\'évaluation', type: String })
+  @ApiOperation({ summary: "Mettre à jour un critère d'évaluation" })
+  @ApiParam({
+    name: 'aoId',
+    description: "UUID de l'Appel d'Offres",
+    type: String,
+  })
+  @ApiParam({
+    name: 'id',
+    description: "UUID du critère d'évaluation",
+    type: String,
+  })
   update(
     @Param('aoId', ParseUUIDPipe) aoId: string,
     @Param('id', ParseUUIDPipe) id: string,
@@ -68,16 +96,21 @@ export class CriteresEvaluationController {
   }
 
   @Delete(':id')
-  @ApiOperation({ summary: 'Supprimer un critère d\'évaluation' })
-  @ApiParam({ name: 'aoId', description: 'UUID de l\'Appel d\'Offres', type: String })
-  @ApiParam({ name: 'id', description: 'UUID du critère d\'évaluation', type: String })
+  @ApiOperation({ summary: "Supprimer un critère d'évaluation" })
+  @ApiParam({
+    name: 'aoId',
+    description: "UUID de l'Appel d'Offres",
+    type: String,
+  })
+  @ApiParam({
+    name: 'id',
+    description: "UUID du critère d'évaluation",
+    type: String,
+  })
   remove(
     @Param('aoId', ParseUUIDPipe) aoId: string,
     @Param('id', ParseUUIDPipe) id: string,
   ) {
-    return this.criteresEvaluationService.remove(
-      aoId,
-      id,
-    );
+    return this.criteresEvaluationService.remove(aoId, id);
   }
 }

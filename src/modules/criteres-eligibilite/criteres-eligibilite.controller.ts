@@ -18,28 +18,47 @@ import { UpdateCriteresEligibiliteDto } from './dto/update-criteres-eligibilite.
 export class CriteresEligibiliteController {
   constructor(
     private readonly criteresEligibiliteService: CriteresEligibiliteService,
-  ) { }
+  ) {}
 
   @Post()
-  @ApiOperation({ summary: 'Créer un critère d\'éligibilité pour un Appel d\'Offres' })
-  @ApiParam({ name: 'aoId', description: 'UUID de l\'Appel d\'Offres', type: String })
+  @ApiOperation({
+    summary: "Créer un critère d'éligibilité pour un Appel d'Offres",
+  })
+  @ApiParam({
+    name: 'aoId',
+    description: "UUID de l'Appel d'Offres",
+    type: String,
+  })
   create(
     @Param('aoId', ParseUUIDPipe) aoId: string,
     @Body() createCriteresEligibiliteDto: CreateCriteresEligibiliteDto,
   ) {
-    return this.criteresEligibiliteService.create(aoId, createCriteresEligibiliteDto);
+    return this.criteresEligibiliteService.create(
+      aoId,
+      createCriteresEligibiliteDto,
+    );
   }
 
   @Get()
-  @ApiOperation({ summary: 'Lister tous les critères d\'éligibilité d\'un Appel d\'Offres' })
-  @ApiParam({ name: 'aoId', description: 'UUID de l\'Appel d\'Offres', type: String })
+  @ApiOperation({
+    summary: "Lister tous les critères d'éligibilité d'un Appel d'Offres",
+  })
+  @ApiParam({
+    name: 'aoId',
+    description: "UUID de l'Appel d'Offres",
+    type: String,
+  })
   findAll(@Param('aoId', ParseUUIDPipe) aoId: string) {
     return this.criteresEligibiliteService.findAll(aoId);
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Récupérer un critère d\'éligibilité par son ID' })
-  @ApiParam({ name: 'aoId', description: 'UUID de l\'Appel d\'Offres', type: String })
+  @ApiOperation({ summary: "Récupérer un critère d'éligibilité par son ID" })
+  @ApiParam({
+    name: 'aoId',
+    description: "UUID de l'Appel d'Offres",
+    type: String,
+  })
   @ApiParam({ name: 'id', description: 'UUID du critère', type: String })
   findOne(
     @Param('aoId', ParseUUIDPipe) aoId: string,
@@ -49,8 +68,12 @@ export class CriteresEligibiliteController {
   }
 
   @Patch(':id')
-  @ApiOperation({ summary: 'Mettre à jour un critère d\'éligibilité' })
-  @ApiParam({ name: 'aoId', description: 'UUID de l\'Appel d\'Offres', type: String })
+  @ApiOperation({ summary: "Mettre à jour un critère d'éligibilité" })
+  @ApiParam({
+    name: 'aoId',
+    description: "UUID de l'Appel d'Offres",
+    type: String,
+  })
   @ApiParam({ name: 'id', description: 'UUID du critère', type: String })
   update(
     @Param('aoId', ParseUUIDPipe) aoId: string,
@@ -65,8 +88,12 @@ export class CriteresEligibiliteController {
   }
 
   @Delete(':id')
-  @ApiOperation({ summary: 'Supprimer un critère d\'éligibilité' })
-  @ApiParam({ name: 'aoId', description: 'UUID de l\'Appel d\'Offres', type: String })
+  @ApiOperation({ summary: "Supprimer un critère d'éligibilité" })
+  @ApiParam({
+    name: 'aoId',
+    description: "UUID de l'Appel d'Offres",
+    type: String,
+  })
   @ApiParam({ name: 'id', description: 'UUID du critère', type: String })
   remove(
     @Param('aoId', ParseUUIDPipe) aoId: string,

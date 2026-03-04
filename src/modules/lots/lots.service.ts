@@ -8,7 +8,7 @@ import { CreateLotDto } from './dto/create-lot.dto';
 
 @Injectable()
 export class LotsService {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
 
   /**
    * Crée un lot attaché à un Appel d'Offres.
@@ -68,4 +68,3 @@ export class LotsService {
     });
   }
 }
-

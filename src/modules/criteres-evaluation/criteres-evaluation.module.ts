@@ -8,5 +8,4 @@ import { PrismaModule } from '../../prisma/prisma.module';
   controllers: [CriteresEvaluationController],
   providers: [CriteresEvaluationService],
 })
-export class CriteresEvaluationModule { }
-
+export class CriteresEvaluationModule {}

@@ -9,6 +9,7 @@ import { AppelOffresModule } from './modules/appel-offres/appel-offres.module';
 import { LotsModule } from './modules/lots/lots.module';
 import { CriteresEligibiliteModule } from './modules/criteres-eligibilite/criteres-eligibilite.module';
 import { CriteresEvaluationModule } from './modules/criteres-evaluation/criteres-evaluation.module';
+import { StorageModule } from './storage/storage.module';
 
 @Module({
   imports: [
@@ -63,8 +64,9 @@ import { CriteresEvaluationModule } from './modules/criteres-evaluation/criteres
     LotsModule,
     CriteresEligibiliteModule,
     CriteresEvaluationModule,
+    StorageModule,
   ],
   controllers: [],
   providers: [],
 })
-export class AppModule { }
+export class AppModule {}

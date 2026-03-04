@@ -8,11 +8,12 @@ Si vous venez d'Express.js, Laravel ou Spring Boot, vous retrouverez très vite 
 
 ## 1. 🧱 Les Concepts Fondamentaux (Les 3 Piliers)
 
-Dans NestJS, l'application est un **arbre de Modules**. Chaque fonctionnalité (ex: les appels d'offres, les utilisateurs) possède son propre Module. 
+Dans NestJS, l'application est un **arbre de Modules**. Chaque fonctionnalité (ex: les appels d'offres, les utilisateurs) possède son propre Module.
 
 Un Module classique est toujours composé de 3 fichiers principaux :
 
 ### A. Le Contrôleur (`.controller.ts`) 🚦
+
 **Rôle :** C'est la porte d'entrée. Il intercepte les requêtes HTTP (`GET`, `POST`), extrait les paramètres (l'URL, le corps de la requête) et **délègue** le travail au Service. Il ne doit **jamais** contenir de logique métier.
 
 ```typescript
@@ -30,18 +31,21 @@ export class UsersController {
   }
 
   @Get(':id') // GET /users/123
-  findOne(@Param('id') id: string) { // @Param extrait l'ID de l'URL
+  findOne(@Param('id') id: string) {
+    // @Param extrait l'ID de l'URL
     return this.usersService.trouverUnSeul(id);
   }
 
   @Post() // POST /users
-  create(@Body() userData: CreateUserDto) { // @Body extrait le JSON envoyé
+  create(@Body() userData: CreateUserDto) {
+    // @Body extrait le JSON envoyé
     return this.usersService.creerQuelquun(userData);
   }
 }
 ```
 
 ### B. Le Service (`.service.ts` ou Provider) 🧠
+
 **Rôle :** C'est le cerveau de l'application (la logique métier). C'est ici que l'on vérifie si un utilisateur a le droit de faire une action, qu'on fait des calculs, et qu'on interroge la base de données via Prisma. Il est annoté avec `@Injectable()`.
 
 ```typescript
@@ -59,7 +63,7 @@ export class UsersService {
   async trouverUnSeul(id: string) {
     const user = await this.prisma.user.findUnique({ where: { id } });
     if (!user) {
-      throw new NotFoundException(`Utilisateur ${id} n'existe pas`); 
+      throw new NotFoundException(`Utilisateur ${id} n'existe pas`);
     }
     return user;
   }
@@ -67,6 +71,7 @@ export class UsersService {
 ```
 
 ### C. Le Module (`.module.ts`) 📦
+
 **Rôle :** C'est la boîte qui regroupe le Contrôleur et le Service, pour les déclarer ensemble et pouvoir les lier au reste de l'application.
 
 ```typescript
@@ -77,7 +82,7 @@ import { UsersService } from './users.service';
 @Module({
   controllers: [UsersController],
   providers: [UsersService],
-  exports: [UsersService]
+  exports: [UsersService],
 })
 export class UsersModule {}
 ```
@@ -95,7 +100,8 @@ nest generate resource nom-du-module
 # ou pour aller plus vite :
 nest g res nom-du-module
 ```
-*Le CLI vous demandera si c'est une API REST (répondez Oui) et s'il faut générer les opérations CRUD de base (répondez Oui).*
+
+_Le CLI vous demandera si c'est une API REST (répondez Oui) et s'il faut générer les opérations CRUD de base (répondez Oui)._
 
 ---
 
@@ -104,6 +110,7 @@ nest g res nom-du-module
 Fini les fichiers `.entity.ts` et les décorateurs `@Column` sur chaque champ TypeScript ! Prisma centralise tout dans `prisma/schema.prisma`.
 
 ### Étape 1 : Le Schéma
+
 Vous décrivez vos tables dans le fichier `prisma/schema.prisma`.
 
 ```prisma
@@ -115,12 +122,15 @@ model User {
 ```
 
 ### Étape 2 : Envoyer à la BDD
+
 Tapez cette commande pour créer les tables SQL :
+
 ```bash
 npx prisma db push
 ```
 
 ### Étape 3 : Utiliser Prisma
+
 Dans vos services NestJS, vous injectez simplement le `PrismaService` pour faire toute votre logique de lecture/écriture. Pas besoin de Repository !
 
 ```typescript
@@ -128,7 +138,7 @@ Dans vos services NestJS, vous injectez simplement le `PrismaService` pour faire
 const actifs = await this.prisma.user.findMany({
   where: { estActif: true },
   take: 10,
-  orderBy: { createdAt: 'desc' }
+  orderBy: { createdAt: 'desc' },
 });
 ```
 

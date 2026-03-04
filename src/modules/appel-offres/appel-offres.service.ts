@@ -2,15 +2,21 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  ConflictException,
 } from '@nestjs/common';
+import * as crypto from 'crypto';
 import { CreateAppelOffreDto } from './dto/create-appel-offre.dto';
 import { UpdateAppelOffreDto } from './dto/update-appel-offre.dto';
 import { PrismaService } from '../../prisma/prisma.service';
+import { StorageService } from '../../storage/storage.service';
 import { StatutAO } from '@prisma/client';
 
 @Injectable()
 export class AppelOffresService {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly storage: StorageService,
+  ) {}
   create(createAppelOffreDto: CreateAppelOffreDto) {
     return this.prisma.appelOffres.create({ data: createAppelOffreDto });
   }
@@ -79,5 +85,99 @@ export class AppelOffresService {
       where: { id },
       data: { statut: nouveauStatut },
     });
+  }
+
+  // --------------------------------------------------------------------------
+  // GESTION DU CDC (MINIO S3)
+  // --------------------------------------------------------------------------
+
+  /**
+   * Upload un Cahier des Charges (CDC) pour l'AO correspondant.
+   * L'AO doit être au statut BROUILLON.
+   */
+  async uploadCdc(
+    aoId: string,
+    fileBuffer: Buffer,
+    mimetype: string,
+    prixRetrait: number = 0,
+  ) {
+    // 1. Vérification Métier
+    const ao = await this.findOne(aoId);
+
+    if (ao.statut !== 'BROUILLON') {
+      throw new ConflictException(
+        "Impossible de modifier le CDC car l'Appel d'Offres n'est plus en BROUILLON.",
+      );
+    }
+
+    // 2. Hachage SHA-256 du fichier
+    const hashSha256 = crypto
+      .createHash('sha256')
+      .update(fileBuffer)
+      .digest('hex');
+
+    // 3. Upload MinIO
+    const bucketName = 'cdc-documents';
+    const key = `AO-${aoId}-${Date.now()}.pdf`;
+
+    const urlS3 = await this.storage.uploadFile(
+      bucketName,
+      key,
+      fileBuffer,
+      mimetype,
+    );
+
+    // 4. Enregistrement Prisma dans DocumentCdc
+    return this.prisma.documentCdc.create({
+      data: {
+        aoId,
+        fichierUrl: urlS3,
+        hashSha256,
+        prixRetrait,
+        publieAt: new Date(),
+      },
+    });
+  }
+
+  /**
+   * Retourne une URL sécurisée (valide 15 minutes) pour télécharger le CDC,
+   * et enregistre ce retrait dans la base de données.
+   */
+  async getPresignedDownloadUrl(aoId: string, operateurId: string) {
+    // 1. Vérification de l'AO
+    await this.findOne(aoId);
+
+    // 2. Trouver le document le plus récent associé à cet AO
+    const document = await this.prisma.documentCdc.findFirst({
+      where: { aoId },
+      orderBy: { publieAt: 'desc' },
+    });
+
+    if (!document) {
+      throw new NotFoundException(
+        "Aucun Cahier des Charges (CDC) n'a été trouvé pour cet Appel d'Offres.",
+      );
+    }
+
+    // 3. Extraire le nom du fichier (key) depuis l'URI interne (s3://bucket/key)
+    const urlParts = document.fichierUrl.replace('s3://', '').split('/');
+    const bucketName = urlParts[0];
+    const key = urlParts.slice(1).join('/');
+
+    // 4. Obtenir l'URL de téléchargement signée (AWS SDK getSignedUrl)
+    const presignedUrl = await this.storage.getPresignedDownloadUrl(
+      bucketName,
+      key,
+    );
+
+    // 5. Traçabilité : Enregistrer que l'Opérateur a retiré le CDC
+    await this.prisma.retraitCdc.create({
+      data: {
+        documentCdcId: document.id,
+        operateurId, // Vient du User Authentifié (Mock pour l'instant)
+      },
+    });
+
+    return { downloadUrl: presignedUrl };
   }
 }

@@ -8,7 +8,9 @@ export class CreateLotDto {
   numero: string;
 
   @ApiProperty({ description: 'Désignation du lot' })
-  @IsString({ message: 'La désignation du lot doit être une chaîne de caractères' })
+  @IsString({
+    message: 'La désignation du lot doit être une chaîne de caractères',
+  })
   @IsNotEmpty({ message: 'La désignation du lot est requise' })
   designation: string;
 

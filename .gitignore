@@ -52,3 +52,9 @@ mysql_data/
 redis_data/
 minio_data/
 rabbitmq_data/
+
+# Nest Guide
+NEST_GUIDE.md
+
+#Klodit CSL
+KLODIT_CSL.pdf

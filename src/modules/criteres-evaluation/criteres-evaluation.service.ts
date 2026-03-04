@@ -1,11 +1,15 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
 import { CreateCriteresEvaluationDto } from './dto/create-criteres-evaluation.dto';
 import { UpdateCriteresEvaluationDto } from './dto/update-criteres-evaluation.dto';
 import { PrismaService } from '../../prisma/prisma.service';
 
 @Injectable()
 export class CriteresEvaluationService {
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService) {}
 
   // ─── Méthode utilitaire privée (évite la duplication du 404) ──────────────
   private async findAoOrFail(aoId: string) {
@@ -20,7 +24,10 @@ export class CriteresEvaluationService {
     return ao;
   }
 
-  async create(aoId: string, createCriteresEvaluationDto: CreateCriteresEvaluationDto) {
+  async create(
+    aoId: string,
+    createCriteresEvaluationDto: CreateCriteresEvaluationDto,
+  ) {
     // 1. Vérifier que l'AO existe
     const ao = await this.findAoOrFail(aoId);
 
@@ -114,7 +121,7 @@ export class CriteresEvaluationService {
 
     // Vérifie que l'AO n'est pas déjà publié
     if (critere.aoId !== aoId) {
-      throw new Error('Le critère n\'est pas lié à cet Appel d\'Offres');
+      throw new Error("Le critère n'est pas lié à cet Appel d'Offres");
     }
 
     // Supprime le critère
