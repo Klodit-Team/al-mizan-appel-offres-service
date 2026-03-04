@@ -58,3 +58,7 @@ NEST_GUIDE.md
 
 #Klodit CSL
 KLODIT_CSL.pdf
+
+# Lint output and scripts
+lint*
+fix*

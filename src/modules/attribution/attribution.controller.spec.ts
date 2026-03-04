@@ -7,8 +7,6 @@ import { TypeAttribution } from '@prisma/client';
 
 describe('AttributionController', () => {
   let controller: AttributionController;
-  let service: AttributionService;
-
   const mockAttribution = {
     id: 'test-id',
     aoId: 'ao-id',
@@ -23,7 +21,9 @@ describe('AttributionController', () => {
     create: jest.fn().mockResolvedValue(mockAttribution),
     findAll: jest.fn().mockResolvedValue([mockAttribution]),
     findOne: jest.fn().mockResolvedValue(mockAttribution),
-    update: jest.fn().mockResolvedValue({ ...mockAttribution, montantAttribue: 2000000 }),
+    update: jest
+      .fn()
+      .mockResolvedValue({ ...mockAttribution, montantAttribue: 2000000 }),
     remove: jest.fn().mockResolvedValue(mockAttribution),
   };
 
@@ -39,7 +39,6 @@ describe('AttributionController', () => {
     }).compile();
 
     controller = module.get<AttributionController>(AttributionController);
-    service = module.get<AttributionService>(AttributionService);
   });
 
   afterEach(() => {
@@ -62,15 +61,15 @@ describe('AttributionController', () => {
       };
 
       const result = await controller.create(dto);
-      expect(service.create).toHaveBeenCalledWith(dto);
+      expect(mockAttributionService.create).toHaveBeenCalledWith(dto);
       expect(result).toEqual(mockAttribution);
     });
   });
 
   describe('findAll', () => {
-    it('devrait retourner un tableau d\'attributions', async () => {
+    it("devrait retourner un tableau d'attributions", async () => {
       const result = await controller.findAll();
-      expect(service.findAll).toHaveBeenCalled();
+      expect(mockAttributionService.findAll).toHaveBeenCalled();
       expect(result).toEqual([mockAttribution]);
     });
   });
@@ -78,7 +77,7 @@ describe('AttributionController', () => {
   describe('findOne', () => {
     it('devrait retourner une attribution', async () => {
       const result = await controller.findOne('test-id');
-      expect(service.findOne).toHaveBeenCalledWith('test-id');
+      expect(mockAttributionService.findOne).toHaveBeenCalledWith('test-id');
       expect(result).toEqual(mockAttribution);
     });
   });
@@ -87,7 +86,10 @@ describe('AttributionController', () => {
     it('devrait mettre à jour une attribution', async () => {
       const dto: UpdateAttributionDto = { montantAttribue: 2000000 };
       const result = await controller.update('test-id', dto);
-      expect(service.update).toHaveBeenCalledWith('test-id', dto);
+      expect(mockAttributionService.update).toHaveBeenCalledWith(
+        'test-id',
+        dto,
+      );
       expect(result.montantAttribue).toEqual(2000000);
     });
   });
@@ -95,7 +97,7 @@ describe('AttributionController', () => {
   describe('remove', () => {
     it('devrait supprimer une attribution', async () => {
       const result = await controller.remove('test-id');
-      expect(service.remove).toHaveBeenCalledWith('test-id');
+      expect(mockAttributionService.remove).toHaveBeenCalledWith('test-id');
       expect(result).toEqual(mockAttribution);
     });
   });

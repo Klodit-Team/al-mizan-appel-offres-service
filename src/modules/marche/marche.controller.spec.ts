@@ -6,8 +6,6 @@ import { UpdateMarcheDto } from './dto/update-marche.dto';
 
 describe('MarcheController', () => {
   let controller: MarcheController;
-  let service: MarcheService;
-
   const mockMarche = {
     id: 'test-id',
     aoId: 'ao-id',
@@ -38,7 +36,6 @@ describe('MarcheController', () => {
     }).compile();
 
     controller = module.get<MarcheController>(MarcheController);
-    service = module.get<MarcheService>(MarcheService);
   });
 
   afterEach(() => {
@@ -61,7 +58,7 @@ describe('MarcheController', () => {
       };
 
       const result = await controller.create(dto);
-      expect(service.create).toHaveBeenCalledWith(dto);
+      expect(mockMarcheService.create).toHaveBeenCalledWith(dto);
       expect(result).toEqual(mockMarche);
     });
   });
@@ -69,7 +66,7 @@ describe('MarcheController', () => {
   describe('findAll', () => {
     it('devrait retourner un tableau de marchés', async () => {
       const result = await controller.findAll();
-      expect(service.findAll).toHaveBeenCalled();
+      expect(mockMarcheService.findAll).toHaveBeenCalled();
       expect(result).toEqual([mockMarche]);
     });
   });
@@ -77,7 +74,7 @@ describe('MarcheController', () => {
   describe('findOne', () => {
     it('devrait retourner une fiche marché', async () => {
       const result = await controller.findOne('test-id');
-      expect(service.findOne).toHaveBeenCalledWith('test-id');
+      expect(mockMarcheService.findOne).toHaveBeenCalledWith('test-id');
       expect(result).toEqual(mockMarche);
     });
   });
@@ -86,7 +83,7 @@ describe('MarcheController', () => {
     it('devrait mettre à jour une fiche marché', async () => {
       const dto: UpdateMarcheDto = { delaiExecution: 360 };
       const result = await controller.update('test-id', dto);
-      expect(service.update).toHaveBeenCalledWith('test-id', dto);
+      expect(mockMarcheService.update).toHaveBeenCalledWith('test-id', dto);
       expect(result.delaiExecution).toEqual(360);
     });
   });
@@ -94,7 +91,7 @@ describe('MarcheController', () => {
   describe('remove', () => {
     it('devrait supprimer une fiche marché', async () => {
       const result = await controller.remove('test-id');
-      expect(service.remove).toHaveBeenCalledWith('test-id');
+      expect(mockMarcheService.remove).toHaveBeenCalledWith('test-id');
       expect(result).toEqual(mockMarche);
     });
   });

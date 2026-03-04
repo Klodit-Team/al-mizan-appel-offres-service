@@ -6,8 +6,6 @@ import { CreateMarcheDto } from './dto/create-marche.dto';
 
 describe('MarcheService', () => {
   let service: MarcheService;
-  let prisma: PrismaService;
-
   const mockMarche = {
     id: 'test-id',
     aoId: 'ao-id',
@@ -23,7 +21,9 @@ describe('MarcheService', () => {
       create: jest.fn().mockResolvedValue(mockMarche),
       findMany: jest.fn().mockResolvedValue([mockMarche]),
       findUnique: jest.fn().mockResolvedValue(mockMarche),
-      update: jest.fn().mockResolvedValue({ ...mockMarche, delaiExecution: 360 }),
+      update: jest
+        .fn()
+        .mockResolvedValue({ ...mockMarche, delaiExecution: 360 }),
       delete: jest.fn().mockResolvedValue(mockMarche),
     },
   };
@@ -40,7 +40,6 @@ describe('MarcheService', () => {
     }).compile();
 
     service = module.get<MarcheService>(MarcheService);
-    prisma = module.get<PrismaService>(PrismaService);
   });
 
   afterEach(() => {
@@ -63,7 +62,7 @@ describe('MarcheService', () => {
       };
 
       const result = await service.create(dto);
-      expect(prisma.marche.create).toHaveBeenCalledWith({
+      expect(mockPrismaService.marche.create).toHaveBeenCalledWith({
         data: dto,
         include: { appelOffres: true, attribution: true },
       });
@@ -74,7 +73,7 @@ describe('MarcheService', () => {
   describe('findAll', () => {
     it('devrait retourner toutes les fiches marchés', async () => {
       const result = await service.findAll();
-      expect(prisma.marche.findMany).toHaveBeenCalledWith({
+      expect(mockPrismaService.marche.findMany).toHaveBeenCalledWith({
         include: { appelOffres: true },
       });
       expect(result).toEqual([mockMarche]);
@@ -84,7 +83,7 @@ describe('MarcheService', () => {
   describe('findOne', () => {
     it('devrait retourner une fiche marché', async () => {
       const result = await service.findOne('test-id');
-      expect(prisma.marche.findUnique).toHaveBeenCalledWith({
+      expect(mockPrismaService.marche.findUnique).toHaveBeenCalledWith({
         where: { id: 'test-id' },
         include: { attribution: true },
       });
@@ -92,15 +91,17 @@ describe('MarcheService', () => {
     });
 
     it('devrait lancer NotFoundException si non trouvé', async () => {
-      (prisma.marche.findUnique as jest.Mock).mockResolvedValueOnce(null);
-      await expect(service.findOne('invalid')).rejects.toThrow(NotFoundException);
+      mockPrismaService.marche.findUnique.mockResolvedValueOnce(null);
+      await expect(service.findOne('invalid')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
   describe('update', () => {
     it('devrait mettre à jour une fiche marché', async () => {
       const result = await service.update('test-id', { delaiExecution: 360 });
-      expect(prisma.marche.update).toHaveBeenCalledWith({
+      expect(mockPrismaService.marche.update).toHaveBeenCalledWith({
         where: { id: 'test-id' },
         data: { delaiExecution: 360 },
       });
@@ -111,7 +112,9 @@ describe('MarcheService', () => {
   describe('remove', () => {
     it('devrait supprimer une fiche marché', async () => {
       const result = await service.remove('test-id');
-      expect(prisma.marche.delete).toHaveBeenCalledWith({ where: { id: 'test-id' } });
+      expect(mockPrismaService.marche.delete).toHaveBeenCalledWith({
+        where: { id: 'test-id' },
+      });
       expect(result).toEqual(mockMarche);
     });
   });

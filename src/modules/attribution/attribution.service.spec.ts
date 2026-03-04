@@ -7,8 +7,6 @@ import { CreateAttributionDto } from './dto/create-attribution.dto';
 
 describe('AttributionService', () => {
   let service: AttributionService;
-  let prisma: PrismaService;
-
   const mockAttribution = {
     id: 'test-id',
     aoId: 'ao-id',
@@ -24,7 +22,9 @@ describe('AttributionService', () => {
       create: jest.fn().mockResolvedValue(mockAttribution),
       findMany: jest.fn().mockResolvedValue([mockAttribution]),
       findUnique: jest.fn().mockResolvedValue(mockAttribution),
-      update: jest.fn().mockResolvedValue({ ...mockAttribution, montantAttribue: 2000000 }),
+      update: jest
+        .fn()
+        .mockResolvedValue({ ...mockAttribution, montantAttribue: 2000000 }),
       delete: jest.fn().mockResolvedValue(mockAttribution),
     },
   };
@@ -41,7 +41,6 @@ describe('AttributionService', () => {
     }).compile();
 
     service = module.get<AttributionService>(AttributionService);
-    prisma = module.get<PrismaService>(PrismaService);
   });
 
   afterEach(() => {
@@ -64,7 +63,7 @@ describe('AttributionService', () => {
       };
 
       const result = await service.create(dto);
-      expect(prisma.attribution.create).toHaveBeenCalledWith({
+      expect(mockPrismaService.attribution.create).toHaveBeenCalledWith({
         data: dto,
         include: { appelOffres: true, lot: true },
       });
@@ -75,7 +74,7 @@ describe('AttributionService', () => {
   describe('findAll', () => {
     it('devrait retourner toutes les attributions', async () => {
       const result = await service.findAll();
-      expect(prisma.attribution.findMany).toHaveBeenCalledWith({
+      expect(mockPrismaService.attribution.findMany).toHaveBeenCalledWith({
         include: { appelOffres: true },
       });
       expect(result).toEqual([mockAttribution]);
@@ -85,20 +84,26 @@ describe('AttributionService', () => {
   describe('findOne', () => {
     it('devrait retourner une attribution', async () => {
       const result = await service.findOne('test-id');
-      expect(prisma.attribution.findUnique).toHaveBeenCalledWith({ where: { id: 'test-id' } });
+      expect(mockPrismaService.attribution.findUnique).toHaveBeenCalledWith({
+        where: { id: 'test-id' },
+      });
       expect(result).toEqual(mockAttribution);
     });
 
     it('devrait lancer NotFoundException si non trouvé', async () => {
-      (prisma.attribution.findUnique as jest.Mock).mockResolvedValueOnce(null);
-      await expect(service.findOne('invalid')).rejects.toThrow(NotFoundException);
+      mockPrismaService.attribution.findUnique.mockResolvedValueOnce(null);
+      await expect(service.findOne('invalid')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
   describe('update', () => {
     it('devrait mettre à jour une attribution', async () => {
-      const result = await service.update('test-id', { montantAttribue: 2000000 });
-      expect(prisma.attribution.update).toHaveBeenCalledWith({
+      const result = await service.update('test-id', {
+        montantAttribue: 2000000,
+      });
+      expect(mockPrismaService.attribution.update).toHaveBeenCalledWith({
         where: { id: 'test-id' },
         data: { montantAttribue: 2000000 },
       });
@@ -109,7 +114,9 @@ describe('AttributionService', () => {
   describe('remove', () => {
     it('devrait supprimer une attribution', async () => {
       const result = await service.remove('test-id');
-      expect(prisma.attribution.delete).toHaveBeenCalledWith({ where: { id: 'test-id' } });
+      expect(mockPrismaService.attribution.delete).toHaveBeenCalledWith({
+        where: { id: 'test-id' },
+      });
       expect(result).toEqual(mockAttribution);
     });
   });
