@@ -288,11 +288,17 @@ Client / API Gateway
    - **Critères d'Évaluation** : CRUD complet (`POST/GET/PATCH/DELETE /appels-offres/:aoId/criteres-evaluation`) avec l'enum Prisma `CategorieCritereEvaluation` (`TECHNIQUE`, `FINANCIER`) et validation du `poids` (Float, borné entre 0 et 100).
    - `GET /appels-offres/:id` retourne désormais l'AO **avec ses sous-ressources incluses** (`lots`, `criteresEligibilite`, `criteresEvaluation`), conformément au critère de validation Swagger de la phase.
 
-### Prochaines étapes : Les 3 Phases restantes
+7. **Gestion des Documents via MinIO (Phase 4 VALIDÉE)** :
+   - Mise en place du module `StorageModule` encapsulant l'instance `S3Client` pour interagir avec le stockage local MinIO.
+   - Endpoint d'upload multipart du Cahier des Charges (CDC) incluant le calcul en mémoire du hachage SHA-256 du PDF.
+   - Stockage décentralisé des fichiers lourds pour optimiser la charge sur la base de données (seule l'URL générée, le prix et le *hash* sont dans PostgreSQL).
+   - Génération dynamique de `Presigned URLs` pour le téléchargement direct.
+   - Traçabilité stricte des retraits (`retrait_cdc`) afin de conserver la trace légale de l'Opérateur accédant au document.
+
+### Prochaines étapes : Les 2 Phases restantes
 
 Nous continuons le développement fonctionnel :
 
-- **Phase 4** : Brancher notre SDK AWS-S3 sur l'`Upload / Download` de MinIO pour stocker le CDC.
 - **Phase 5** : Publier dans l'event-bus `RabbitMQ` pour informer les autres microservices.
 - **Phase 6** : Les Workflows complexes via IA, le Gré-à-Gré et l'intégration du RBAC (`@Roles(...)`).
 
@@ -302,7 +308,7 @@ Nous continuons le développement fonctionnel :
 | :--: | --- | ------------------------------------------------------------------------------ | ------------ | ---------- |
 |  ✅  | 1   | **Créer un AO** (référence, objet, type, montant estimé, dates limites)        | SC           | 🔴 Haute   |
 |  ✅  | 2   | **Gérer les lots** (découpage AO en lots, numéro, désignation, montant estimé) | SC           | 🔴 Haute   |
-|  ⬜  | 3   | **Publier / retirer le CDC** (upload avec prix de retrait, accès OE)           | SC           | 🔴 Haute   |
+|  ✅  | 3   | **Publier / retirer le CDC** (upload avec prix de retrait, accès OE)           | SC           | 🔴 Haute   |
 |  ✅  | 4   | **Définir les critères d'éligibilité** (CA min, expérience, certifications)    | SC           | 🔴 Haute   |
 |  ✅  | 5   | **Définir les critères d'évaluation** (technique + financier, pondération%)    | SC           | 🔴 Haute   |
 |  ⬜  | 6   | **Publier un avis réglementaire** (AO, attribution prov./déf., annulation)     | SC           | 🔴 Haute   |
@@ -314,9 +320,25 @@ Nous continuons le développement fonctionnel :
 |  ⬜  | 12  | **Analyse IA d'une demande gré-à-gré** (score de conformité + recommandation)  | Système / IA | 🟡 Moyenne |
 |  ⬜  | 13  | **Valider / rejeter une demande gré-à-gré** (comparaison recommandation IA)    | Contrôleur   | 🟡 Moyenne |
 |  ✅  | 14  | **Consulter les AO publiés** (filtres : type, wilaya, secteur — pagination)    | OE           | 🔴 Haute   |
-|  ⬜  | 15  | **Retirer le CDC** (téléchargement avec traçabilité + URL présignée)           | OE           | 🔴 Haute   |
+|  ✅  | 15  | **Retirer le CDC** (téléchargement avec traçabilité + URL présignée)           | OE           | 🔴 Haute   |
 
-> **Progression : 6 / 15 User Stories livrées** (Phases 1, 2 & 3 complètes)
+> **Progression : 8 / 15 User Stories livrées** (Phases 1, 2, 3 & 4 complètes)
+
+### 🧪 Couverture des Tests Unitaires (Jest)
+
+La suite de tests a été exécutée avec succès (`56 tests passed` sur `10 Test Suites`). Tous les accès externes (PostgreSQL via Prisma, MinIO via AWS SDK) sont intégralement mockés.
+
+| Composant | Fichier Testé | Méthodes Validées | Comportements Clés Testés |
+| :--- | :--- | :--- | :--- |
+| **Storage (S3)** | `storage.service.spec.ts` | `uploadFile`<br>`getPresignedDownloadUrl` | Format S3 des URI, Paramètres AWS `PutObjectCommand`/`GetObjectCommand`, Exceptions. |
+| **AppelOffres (Controller)**  | `appel-offres.controller.spec.ts` | `uploadCdc`<br>`getCdcDownloadUrl` | Levée `BadRequestException` si fichier absent, Mocking strict du Service. |
+| **AppelOffres (Service)** | `appel-offres.service.spec.ts` | `uploadCdc`<br>`getPresignedDownloadUrl` | Hachage, Règles métier (Statut BROUILLON/Conflict), Enregistrement Traçabilité. |
+| **Lots (Controller)** | `lots.controller.spec.ts` | `create`<br>`findAll` | Transfert correct des requêtes et DTOs vers le constructeur du service métier. |
+| **Lots (Service)** | `lots.service.spec.ts` | `create`<br>`findAll` | Assertions `NotFoundException` (AO inexistant), `ConflictException` (Statut AO invalide). |
+| **Eligibilité (Controller)** | `criteres-eligibilite.controller.spec.ts` | `create`<br>`findAll`<br>`findOne` ... | Vérification que le routing vers le service (arguments multiples) est optimal. |
+| **Eligibilité (Service)** | `criteres-eligibilite.service.spec.ts` | `create`<br>`findAll`<br>`update` ... | Exceptions de liens (Critère non lié à l'AO ciblé), Updates stricts, Enumérations. |
+| **Évaluation (Controller)** | `criteres-evaluation.controller.spec.ts` | `create`<br>`update`<br>`delete` ... | Validation du pipeline NestJS depuis l'injection du Service. |
+| **Évaluation (Service)** | `criteres-evaluation.service.spec.ts` | `create`<br>`findAll`<br>`remove` ... | Interdictions formelles d'altération si conditions ou hiérarchie (aoId) non réunies. |
 
 ---
 
