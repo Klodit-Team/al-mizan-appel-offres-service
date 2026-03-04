@@ -266,24 +266,32 @@ Client / API Gateway
    - Validation ESLint/Prettier.
    - Build de sécurité Docker à travers `hadolint`.
 3. **Connectivité des modules globaux** : API Rest, Cache Redis, ConfigModule pour le `.env`.
-4. **Modélisation Base de Données (Phase 1 VALIDÉE)** : 
+4. **Modélisation Base de Données (Phase 1 VALIDÉE)** :
    - Passage complet à **Prisma v6**.
    - Le fichier `schema.prisma` gère de façon centralisée les 9 modèles métier (`AppelOffres`, `Lot`, `CritereEligibilite`, etc.) et les énumérations.
    - La base de données contient **10 tables déployées avec succès** de façon automatisée en base `ao_db`.
    - `PrismaService` injecté globalement et prêt à être utilisé par tous nos futurs contrôleurs et services métier.
 
-5. **Cœur Métier Appels d'Offres (Phase 2 VALIDÉE)** :
+5. **Coeur Métier Appels d'Offres (Phase 2 VALIDÉE)** :
    - Structure du module générée (`Controller`, `Service`, `DTO`).
    - Protections anti-injections et validation de payload implémentées avec succès via `class-validator` et `@nestjs/swagger` dans les DTOs.
    - CRUD complet branché directement sur PostgreSQL via `PrismaClient` (création avec vérification, suppression logique, listage).
    - **Machine à États métier** : Un endpoint `PATCH /:id/statut` a été codé avec des règles strictes pour bloquer les transitions de statuts illégales (ex: interdire de passer de BROUILLON à ATTRIBUE). L'API renvoie des erreurs 400 intelligentes en cas d'abus.
 
-### Prochaines étapes : Les 4 Phases restantes
+6. **Sous-Ressources Lots & Critères (Phase 3 VALIDÉE)** :
+   - Génération et configuration des 3 modules NestJS imbriqués : `LotsModule`, `CriteresEligibiliteModule`, `CriteresEvaluationModule`.
+   - Enregistrement de tous les modules métier dans `AppModule` avec `PrismaModule` correctement injecté dans chacun.
+   - **Gestion des Lots** : CRUD complet sur `POST/GET /appels-offres/:aoId/lots` avec règle métier — création bloquée si l'AO n'est pas au statut `BROUILLON` (409 Conflict), 404 si l'AO n'existe pas.
+   - **Critères d'Éligibilité** : CRUD complet (`POST/GET/PATCH/DELETE /appels-offres/:aoId/criteres-eligibilite`) avec l'enum Prisma `TypeCritereEligibilite` (`CA_MIN`, `EXPERIENCE`, `CERTIFICATION`) typé dans le DTO et validé par `@IsEnum`.
+   - **Critères d'Évaluation** : CRUD complet (`POST/GET/PATCH/DELETE /appels-offres/:aoId/criteres-evaluation`) avec l'enum Prisma `CategorieCritereEvaluation` (`TECHNIQUE`, `FINANCIER`) et validation du `poids` (Float, borné entre 0 et 100).
+   - `GET /appels-offres/:id` retourne désormais l'AO **avec ses sous-ressources incluses** (`lots`, `criteresEligibilite`, `criteresEvaluation`), conformément au critère de validation Swagger de la phase.
+
+### Prochaines étapes : Les 3 Phases restantes
 Nous continuons le développement fonctionnel :
-- **Phase 3** : Lier les sous-ressources à l'AO parent (`Lots` et `Critères`).
 - **Phase 4** : Brancher notre SDK AWS-S3 sur l'`Upload / Download` de MinIO pour stocker le CDC.
 - **Phase 5** : Publier dans l'event-bus `RabbitMQ` pour informer les autres microservices.
 - **Phase 6** : Les Workflows complexes via IA, le Gré-à-Gré et l'intégration du RBAC (`@Roles(...)`).
 
 ---
 *Base issue du Cahier des Spécifications Logicielles (CSL) Al-Mizan v1.0, équipe KLODIT.*
+

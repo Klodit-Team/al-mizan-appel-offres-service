@@ -20,7 +20,14 @@ export class AppelOffresService {
   }
 
   async findOne(id: string) {
-    const ao = await this.prisma.appelOffres.findUnique({ where: { id } });
+    const ao = await this.prisma.appelOffres.findUnique({
+      where: { id },
+      include: {
+        lots: true,
+        criteresEligibilite: true,
+        criteresEvaluation: true,
+      },
+    });
     if (!ao) {
       throw new NotFoundException(
         `L'Appel d'Offres avec l'ID ${id} est introuvable.`,

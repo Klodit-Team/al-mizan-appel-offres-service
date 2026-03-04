@@ -1,31 +1,125 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { CreateCriteresEvaluationDto } from './dto/create-criteres-evaluation.dto';
 import { UpdateCriteresEvaluationDto } from './dto/update-criteres-evaluation.dto';
+import { PrismaService } from '../../prisma/prisma.service';
 
 @Injectable()
 export class CriteresEvaluationService {
-  create(_createCriteresEvaluationDto: CreateCriteresEvaluationDto) {
-    console.log(_createCriteresEvaluationDto);
-    return 'This action adds a new criteresEvaluation';
+  constructor(private prisma: PrismaService) { }
+
+  // ─── Méthode utilitaire privée (évite la duplication du 404) ──────────────
+  private async findAoOrFail(aoId: string) {
+    const ao = await this.prisma.appelOffres.findUnique({
+      where: { id: aoId },
+    });
+    if (!ao) {
+      throw new NotFoundException(
+        `L'Appel d'Offres avec l'ID "${aoId}" n'existe pas.`,
+      );
+    }
+    return ao;
   }
 
-  findAll() {
-    return `This action returns all criteresEvaluation`;
+  async create(aoId: string, createCriteresEvaluationDto: CreateCriteresEvaluationDto) {
+    // 1. Vérifier que l'AO existe
+    const ao = await this.findAoOrFail(aoId);
+
+    // 2. Vérifier que l'AO est au statut BROUILLON
+    if (ao.statut !== 'BROUILLON') {
+      throw new ConflictException(
+        `Impossible d'ajouter un critère : l'AO est au statut "${ao.statut}". Seul "BROUILLON" est autorisé.`,
+      );
+    }
+
+    // 3. Créer le critère
+    return this.prisma.critereEvaluation.create({
+      data: {
+        aoId,
+        ...createCriteresEvaluationDto,
+      },
+    });
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} criteresEvaluation`;
+  async findAll(aoId: string) {
+    // Vérifie que l'AO existe
+    await this.findAoOrFail(aoId);
+
+    // Récupère tous les critères liés à cet AO
+    return this.prisma.critereEvaluation.findMany({
+      where: { aoId },
+    });
   }
 
-  update(
-    id: number,
+  async findOne(aoId: string, id: string) {
+    // Vérifie que l'AO existe
+    await this.findAoOrFail(aoId);
+
+    // Vérifie que le critère existe et appartient à l'AO
+    const critere = await this.prisma.critereEvaluation.findUnique({
+      where: { id },
+    });
+    if (!critere) {
+      throw new NotFoundException(
+        `Le critère d'évaluation avec l'ID "${id}" n'existe pas.`,
+      );
+    }
+    return critere;
+  }
+
+  async update(
+    aoId: string,
+    id: string,
     _updateCriteresEvaluationDto: UpdateCriteresEvaluationDto,
   ) {
-    console.log(_updateCriteresEvaluationDto);
-    return `This action updates a #${id} criteresEvaluation`;
+    // Vérifie que l'AO existe
+    await this.findAoOrFail(aoId);
+
+    // Vérifie que le critère existe et appartient à l'AO
+    const critere = await this.prisma.critereEvaluation.findUnique({
+      where: { id },
+    });
+    if (!critere) {
+      throw new NotFoundException(
+        `Le critère d'évaluation avec l'ID "${id}" n'existe pas.`,
+      );
+    }
+
+    // Vérifie que le critère appartient bien à cet AO
+    if (critere.aoId !== aoId) {
+      throw new ConflictException(
+        `Le critère "${id}" n'appartient pas à l'AO "${aoId}".`,
+      );
+    }
+
+    // Met à jour le critère
+    return this.prisma.critereEvaluation.update({
+      where: { id },
+      data: _updateCriteresEvaluationDto,
+    });
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} criteresEvaluation`;
+  async remove(aoId: string, id: string) {
+    // Vérifie que l'AO existe
+    await this.findAoOrFail(aoId);
+
+    // Vérifie que le critère existe et appartient à l'AO
+    const critere = await this.prisma.critereEvaluation.findUnique({
+      where: { id },
+    });
+    if (!critere) {
+      throw new NotFoundException(
+        `Le critère d'évaluation avec l'ID "${id}" n'existe pas.`,
+      );
+    }
+
+    // Vérifie que l'AO n'est pas déjà publié
+    if (critere.aoId !== aoId) {
+      throw new Error('Le critère n\'est pas lié à cet Appel d\'Offres');
+    }
+
+    // Supprime le critère
+    return this.prisma.critereEvaluation.delete({
+      where: { id },
+    });
   }
 }

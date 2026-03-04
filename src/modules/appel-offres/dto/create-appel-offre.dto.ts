@@ -25,8 +25,8 @@ export class CreateAppelOffreDto {
     description: "L'objet ou titre du marché",
     example: 'Acquisition de PC Portables',
   })
-  @IsString()
-  @IsNotEmpty()
+  @IsString({ message: 'L\'objet doit être une chaîne de caractères' })
+  @IsNotEmpty({ message: 'L\'objet est requis' })
   objet: string;
 
   @ApiProperty({
@@ -34,13 +34,13 @@ export class CreateAppelOffreDto {
     description: 'Procédure ouverte, restreinte, gré-à-gré...',
   })
   @IsEnum(TypeProcedure, { message: "Le type de procédure n'est pas valide" })
-  @IsNotEmpty()
+  @IsNotEmpty({ message: 'Le type de procédure est requis' })
   typeProcedure: TypeProcedure;
 
   @ApiProperty({ description: 'Montant estimatif en DZD', example: 5000000 })
   @IsNumber({}, { message: 'Le montant doit être un nombre' })
   @IsPositive({ message: 'Le montant doit être strictement positif (>0)' })
-  @IsNotEmpty()
+  @IsNotEmpty({ message: 'Le montant estimé est requis' })
   montantEstime: number;
 
   @ApiProperty({
@@ -54,7 +54,7 @@ export class CreateAppelOffreDto {
         'La date limite de soumission doit être une date valide (ISO-8601)',
     },
   )
-  @IsNotEmpty()
+  @IsNotEmpty({ message: 'La date limite de soumission est requise' })
   dateLimiteSoumission: string;
 
   @ApiProperty({
@@ -62,7 +62,7 @@ export class CreateAppelOffreDto {
     example: '2025-12-15T12:00:00Z',
   })
   @IsDateString({}, { message: 'La date limite de retrait doit être valide' })
-  @IsNotEmpty()
+  @IsNotEmpty({ message: 'La date limite de retrait est requise' })
   dateLimiteRetraitCdc: string;
 
   @ApiProperty({
@@ -73,19 +73,19 @@ export class CreateAppelOffreDto {
   @IsUUID('4', {
     message: "L'ID du service contractant doit être un UUID valide",
   })
-  @IsNotEmpty()
+  @IsNotEmpty({ message: 'L\'ID du service contractant est requis' })
   serviceContractantId: string;
 
   @ApiProperty({ description: 'La Wilaya concernée', example: 'Alger' })
-  @IsString()
-  @IsNotEmpty()
+  @IsString({ message: 'La Wilaya doit être une chaîne de caractères' })
+  @IsNotEmpty({ message: 'La Wilaya est requise' })
   wilaya: string;
 
   @ApiProperty({
     description: "Domaine d'activité du marché",
     example: 'Informatique & High-Tech',
   })
-  @IsString()
-  @IsNotEmpty()
+  @IsString({ message: 'Le secteur d\'activité doit être une chaîne de caractères' })
+  @IsNotEmpty({ message: 'Le secteur d\'activité est requis' })
   secteurActivite: string;
 }

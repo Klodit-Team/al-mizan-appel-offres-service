@@ -3,40 +3,42 @@ import {
   Get,
   Post,
   Body,
-  Patch,
   Param,
-  Delete,
+  ParseUUIDPipe,
 } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiParam } from '@nestjs/swagger';
 import { LotsService } from './lots.service';
 import { CreateLotDto } from './dto/create-lot.dto';
-import { UpdateLotDto } from './dto/update-lot.dto';
 
-@Controller('lots')
+@ApiTags('Lots')
+@Controller('appels-offres/:aoId/lots')
 export class LotsController {
-  constructor(private readonly lotsService: LotsService) {}
+  constructor(private readonly lotsService: LotsService) { }
 
+  /**
+   * POST /api/appels-offres/:aoId/lots
+   * Crée un nouveau lot pour l'AO spécifié.
+   * Règle métier : L'AO doit être au statut BROUILLON.
+   */
   @Post()
-  create(@Body() createLotDto: CreateLotDto) {
-    return this.lotsService.create(createLotDto);
+  @ApiOperation({ summary: 'Créer un lot pour un Appel d\'Offres' })
+  @ApiParam({ name: 'aoId', description: 'UUID de l\'Appel d\'Offres', type: String })
+  create(
+    @Param('aoId', ParseUUIDPipe) aoId: string,
+    @Body() createLotDto: CreateLotDto,
+  ) {
+    return this.lotsService.create(aoId, createLotDto);
   }
 
+  /**
+   * GET /api/appels-offres/:aoId/lots
+   * Récupère tous les lots d'un Appel d'Offres.
+   */
   @Get()
-  findAll() {
-    return this.lotsService.findAll();
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.lotsService.findOne(+id);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateLotDto: UpdateLotDto) {
-    return this.lotsService.update(+id, updateLotDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.lotsService.remove(+id);
+  @ApiOperation({ summary: 'Lister tous les lots d\'un Appel d\'Offres' })
+  @ApiParam({ name: 'aoId', description: 'UUID de l\'Appel d\'Offres', type: String })
+  findAll(@Param('aoId', ParseUUIDPipe) aoId: string) {
+    return this.lotsService.findAll(aoId);
   }
 }
+

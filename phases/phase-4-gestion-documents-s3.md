@@ -22,7 +22,7 @@ Les paramètres sont déjà dans `.env` :
 *   `s3ForcePathStyle`: `true`
 
 ### 2. Téléchargement du CDC (Le Service Contractant upload)
-Crée l'endpoint : `POST /api/v1/appels-offres/:aoId/cdc`.
+Crée l'endpoint : `POST /api/appels-offres/:aoId/cdc`.
 Ce endpoint doit utiliser le module `Multer` de Node.js via `@UseInterceptors(FileInterceptor('fichier'))`.
 
 **Logique du Service :**
@@ -35,7 +35,7 @@ Ce endpoint doit utiliser le module `Multer` de Node.js via `@UseInterceptors(Fi
 4.  **Enregistrement Prisma :** Crée une entrée dans ta table `DocumentCdc` en sauvegardant l'URL S3 générée, le nom, le `hashSha256` calculé et le `prixRetrait` éventuel.
 
 ### 3. Le Retrait Sécurisé (L'Opérateur Économique télécharge)
-Crée l'endpoint : `GET /api/v1/appels-offres/:aoId/cdc/download`.
+Crée l'endpoint : `GET /api/appels-offres/:aoId/cdc/download`.
 
 **L'objectif n'est pas de renvoyer le fichier binaire directement !**
 Ton endpoint doit :

@@ -1,28 +1,71 @@
-import { Injectable } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
+import { PrismaService } from '../../prisma/prisma.service';
 import { CreateLotDto } from './dto/create-lot.dto';
-import { UpdateLotDto } from './dto/update-lot.dto';
 
 @Injectable()
 export class LotsService {
-  create(_createLotDto: CreateLotDto) {
-    console.log(_createLotDto);
-    return 'This action adds a new lot';
+  constructor(private readonly prisma: PrismaService) { }
+
+  /**
+   * Crée un lot attaché à un Appel d'Offres.
+   *
+   * Règles métier :
+   *  1. L'AO doit exister → sinon 404 Not Found
+   *  2. L'AO doit être au statut BROUILLON → sinon 409 Conflict
+   */
+  async create(aoId: string, createLotDto: CreateLotDto) {
+    // 1. Vérifier que l'AO parent existe
+    const ao = await this.prisma.appelOffres.findUnique({
+      where: { id: aoId },
+    });
+
+    if (!ao) {
+      throw new NotFoundException(
+        `L'Appel d'Offres avec l'ID "${aoId}" n'existe pas.`,
+      );
+    }
+
+    // 2. Vérifier que l'AO est au statut BROUILLON
+    if (ao.statut !== 'BROUILLON') {
+      throw new ConflictException(
+        `Impossible d'ajouter un lot : l'AO est au statut "${ao.statut}". Seul le statut "BROUILLON" est autorisé.`,
+      );
+    }
+
+    // 3. Créer le lot dans la BDD
+    return this.prisma.lot.create({
+      data: {
+        aoId,
+        numero: createLotDto.numero,
+        designation: createLotDto.designation,
+        montantEstime: createLotDto.montantEstime,
+      },
+    });
   }
 
-  findAll() {
-    return `This action returns all lots`;
-  }
+  /**
+   * Récupère tous les lots d'un Appel d'Offres.
+   */
+  async findAll(aoId: string) {
+    // Vérifie que l'AO existe
+    const ao = await this.prisma.appelOffres.findUnique({
+      where: { id: aoId },
+    });
 
-  findOne(id: number) {
-    return `This action returns a #${id} lot`;
-  }
+    if (!ao) {
+      throw new NotFoundException(
+        `L'Appel d'Offres avec l'ID "${aoId}" n'existe pas.`,
+      );
+    }
 
-  update(id: number, _updateLotDto: UpdateLotDto) {
-    console.log(_updateLotDto);
-    return `This action updates a #${id} lot`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} lot`;
+    return this.prisma.lot.findMany({
+      where: { aoId },
+      orderBy: { numero: 'asc' },
+    });
   }
 }
+

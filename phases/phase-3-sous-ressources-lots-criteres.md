@@ -11,17 +11,17 @@ L'objectif de cette phase est de permettre au Service Contractant d'ajouter des 
     
 ### 2. Gestion des Lots (Découpage de l'AO)
 *   Créer `CreateLotDto` : `numero` (string), `designation` (string), `montantEstime` (number).
-*   Créer l'endpoint `POST /api/v1/appels-offres/:aoId/lots` dans ton `LotsController`.
+*   Créer l'endpoint `POST /api/appels-offres/:aoId/lots` dans ton `LotsController`.
 *   *Règle métier* : Un AO ne peut recevoir des lots que s'il est au statut `BROUILLON`. Teste l'état du parent avant création !
 *   *Validation* : Si l'AO n'existe pas, renvoyer `404 Not Found`.
 
 ### 3. Gestion des Critères d'Éligibilité (Conditions éliminatoires)
 *   Créer `CreateCritereEligibiliteDto` : `libelle` (string), `type` (Enum Prisma), `valeurMinimale` (string).
-*   Créer l'endpoint `POST /api/v1/appels-offres/:aoId/criteres-eligibilite`.
+*   Créer l'endpoint `POST /api/appels-offres/:aoId/criteres-eligibilite`.
 
 ### 4. Gestion des Critères d'Évaluation (Notation technique et financière)
 *   Créer `CreateCritereEvaluationDto` : `libelle` (string), `categorie` (Enum Prisma), `poids` (nombre Float).
-*   Créer l'endpoint `POST /api/v1/appels-offres/:aoId/criteres-evaluation`.
+*   Créer l'endpoint `POST /api/appels-offres/:aoId/criteres-evaluation`.
 *   *Validation Métier stricte (À implémenter dans la Phase 2 lors de la publication)* : La **somme des `poids`** de tous les critères d'évaluation rattachés à un AO/Lot **doit être égale à 100**. Sinon, bloquer la publication avec `400 Bad Request`.
 
 ## 🛠️ Outils NestJS & Prisma à utiliser :

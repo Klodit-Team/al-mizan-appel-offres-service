@@ -5,6 +5,10 @@ import { CacheModule } from '@nestjs/cache-manager';
 import { redisStore } from 'cache-manager-ioredis-yet';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { PrismaModule } from './prisma/prisma.module';
+import { AppelOffresModule } from './modules/appel-offres/appel-offres.module';
+import { LotsModule } from './modules/lots/lots.module';
+import { CriteresEligibiliteModule } from './modules/criteres-eligibilite/criteres-eligibilite.module';
+import { CriteresEvaluationModule } from './modules/criteres-evaluation/criteres-evaluation.module';
 
 @Module({
   imports: [
@@ -54,9 +58,13 @@ import { PrismaModule } from './prisma/prisma.module';
 
     PrismaModule,
 
-    // Ajoutez ici les imports de vos modules métier (Ex: AppelOffresModule, LotsModule, ...)
+    // Modules métier
+    AppelOffresModule,
+    LotsModule,
+    CriteresEligibiliteModule,
+    CriteresEvaluationModule,
   ],
   controllers: [],
   providers: [],
 })
-export class AppModule {}
+export class AppModule { }

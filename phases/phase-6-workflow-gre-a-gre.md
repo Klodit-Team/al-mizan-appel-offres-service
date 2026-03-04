@@ -22,7 +22,7 @@ Maintenant, nous allons le fermer avec un cadenas de haute sécurité (RBAC - Ro
 
 ### 2. Procédure Gré-à-Gré Assistée par IA 🤖
 Si la `TypeProcedure` de l'Appel d'Offre est `GRE_A_GRE` (et NON `AO_OUVERT` défini par défaut dans Prisma), le flux change complètement :
-1.  **Création d'un endpoint exclusif :** `POST /api/v1/appels-offres/:id/gre-a-gre/soumettre`.
+1.  **Création d'un endpoint exclusif :** `POST /api/appels-offres/:id/gre-a-gre/soumettre`.
 2.  **Corps de requête (Multimédia) :** Le Service Contractant upload une lettre de `'justification'` + des tableaux de `'pieces_jointes'` MinIO.
 3.  **Appel à l'API OCR/NLP Intelligente (Mock) :**
     - Étant donné que tu vas simuler le Microservice NLP de l'ENS, tu vas créer une fonction factice `analyserJustificationIA(texte): { score_conformite_ia: float, recommandation_ia: string }`.
