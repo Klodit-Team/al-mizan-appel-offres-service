@@ -292,6 +292,28 @@ Nous continuons le développement fonctionnel :
 - **Phase 5** : Publier dans l'event-bus `RabbitMQ` pour informer les autres microservices.
 - **Phase 6** : Les Workflows complexes via IA, le Gré-à-Gré et l'intégration du RBAC (`@Roles(...)`).
 
+### 📊 Suivi du Backlog Fonctionnel (15 User Stories)
+
+| Fait | # | Fonctionnalité | Acteur | Priorité |
+|:----:|---|---------------|--------|----------|
+| ✅ | 1 | **Créer un AO** (référence, objet, type, montant estimé, dates limites) | SC | 🔴 Haute |
+| ✅ | 2 | **Gérer les lots** (découpage AO en lots, numéro, désignation, montant estimé) | SC | 🔴 Haute |
+| ⬜ | 3 | **Publier / retirer le CDC** (upload avec prix de retrait, accès OE) | SC | 🔴 Haute |
+| ✅ | 4 | **Définir les critères d'éligibilité** (CA min, expérience, certifications) | SC | 🔴 Haute |
+| ✅ | 5 | **Définir les critères d'évaluation** (technique + financier, pondération%) | SC | 🔴 Haute |
+| ⬜ | 6 | **Publier un avis réglementaire** (AO, attribution prov./déf., annulation) | SC | 🔴 Haute |
+| ✅ | 7 | **Machine à états du cycle de vie** : `BROUILLON → PUBLIE → ... → ATTRIBUE` | SC / Système | 🔴 Haute |
+| ⬜ | 8 | **Prononcer l'attribution provisoire** (lancer période recours) | SC | 🔴 Haute |
+| ⬜ | 9 | **Prononcer l'attribution définitive** (après expiration recours) | SC | 🔴 Haute |
+| ⬜ | 10 | **Créer la fiche marché** (formalisation contractuelle) | SC | 🟡 Moyenne |
+| ⬜ | 11 | **Soumettre une demande gré-à-gré** (justifications + pièces obligatoires) | SC | 🟡 Moyenne |
+| ⬜ | 12 | **Analyse IA d'une demande gré-à-gré** (score de conformité + recommandation) | Système / IA | 🟡 Moyenne |
+| ⬜ | 13 | **Valider / rejeter une demande gré-à-gré** (comparaison recommandation IA) | Contrôleur | 🟡 Moyenne |
+| ✅ | 14 | **Consulter les AO publiés** (filtres : type, wilaya, secteur — pagination) | OE | 🔴 Haute |
+| ⬜ | 15 | **Retirer le CDC** (téléchargement avec traçabilité + URL présignée) | OE | 🔴 Haute |
+
+> **Progression : 6 / 15 User Stories livrées** (Phases 1, 2 & 3 complètes)
+
 ---
 *Base issue du Cahier des Spécifications Logicielles (CSL) Al-Mizan v1.0, équipe KLODIT.*
 
