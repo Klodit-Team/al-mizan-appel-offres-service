@@ -10,15 +10,34 @@ import { UpdateAppelOffreDto } from './dto/update-appel-offre.dto';
 import { PrismaService } from '../../prisma/prisma.service';
 import { StorageService } from '../../storage/storage.service';
 import { StatutAO } from '@prisma/client';
+import { AoEventsPublisher } from '../../messaging/publishers/ao-events.publisher';
 
 @Injectable()
 export class AppelOffresService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly storage: StorageService,
+    private readonly publisher: AoEventsPublisher,
   ) {}
-  create(createAppelOffreDto: CreateAppelOffreDto) {
-    return this.prisma.appelOffres.create({ data: createAppelOffreDto });
+
+  // --------------------------------------------------------------------------
+  // CRUD DE BASE
+  // --------------------------------------------------------------------------
+
+  async create(createAppelOffreDto: CreateAppelOffreDto) {
+    const ao = await this.prisma.appelOffres.create({
+      data: createAppelOffreDto,
+    });
+
+    // 📢 Notifier le SI qu'un AO a été créé (Audit)
+    this.publisher.publishAoCreated({
+      aoId: ao.id,
+      typeProcedure: ao.typeProcedure,
+      objet: ao.objet,
+      createdAt: ao.createdAt,
+    });
+
+    return ao;
   }
 
   findAll() {
@@ -53,12 +72,16 @@ export class AppelOffresService {
     return this.prisma.appelOffres.delete({ where: { id } });
   }
 
+  // --------------------------------------------------------------------------
+  // MACHINE À ÉTATS (avec événements RabbitMQ)
+  // --------------------------------------------------------------------------
+
   async updateStatut(id: string, nouveauStatut: StatutAO) {
-    // 1. On récupère d'abord l'AO actuel
+    // 1. Récupérer l'AO actuel
     const ao = await this.findOne(id);
     const statutActuel = ao.statut;
 
-    // 2. Définition stricte de la Machine à États selon tes règles
+    // 2. Définition stricte de la Machine à États
     const transitionsAutorisees: Record<StatutAO, StatutAO[]> = {
       BROUILLON: [StatutAO.PUBLIE, StatutAO.ANNULE],
       PUBLIE: [StatutAO.EN_COURS, StatutAO.ANNULE],
@@ -66,25 +89,60 @@ export class AppelOffresService {
       OUVERTURE_PLIS: [StatutAO.EVALUATION, StatutAO.ANNULE],
       EVALUATION: [StatutAO.ATTRIBUE, StatutAO.ANNULE],
       ATTRIBUE: [StatutAO.CLOTURE, StatutAO.ANNULE],
-      ANNULE: [], // Un AO annulé est figé
-      CLOTURE: [], // Un AO clôturé est figé
+      ANNULE: [],
+      CLOTURE: [],
     };
 
-    // 3. Vérification de la légalité du changement
-    const estAutorise =
-      transitionsAutorisees[statutActuel].includes(nouveauStatut);
-
-    if (!estAutorise) {
+    // 3. Vérification de la légalité de la transition
+    if (!transitionsAutorisees[statutActuel].includes(nouveauStatut)) {
       throw new BadRequestException(
         `Transition de statut interdite : impossible de passer de [${statutActuel}] à [${nouveauStatut}].`,
       );
     }
 
-    // 4. Tout est bon, on met à jour !
-    return this.prisma.appelOffres.update({
+    // 4. Mise à jour en base
+    const updated = await this.prisma.appelOffres.update({
       where: { id },
       data: { statut: nouveauStatut },
     });
+
+    // ─── 📢 Événement générique : toujours émis (pour l'Audit) ───────────────
+    this.publisher.publishAoStatusChanged({
+      aoId: id,
+      ancienStatut: statutActuel,
+      nouveauStatut,
+      changedAt: new Date(),
+    });
+
+    // ─── 📢 Événements métier spécifiques au nouveau statut ──────────────────
+
+    if (nouveauStatut === StatutAO.PUBLIE) {
+      this.publisher.publishAoPublished({
+        aoId: id,
+        reference: ao.reference,
+        objet: ao.objet,
+        datePublication: new Date(),
+      });
+    }
+
+    if (nouveauStatut === StatutAO.ATTRIBUE) {
+      const dateFinRecours = new Date();
+      dateFinRecours.setDate(dateFinRecours.getDate() + 10); // Art. 83 Loi 23-12
+
+      this.publisher.publishAttributionProvisoire({
+        aoId: id,
+        dateFinRecours,
+      });
+    }
+
+    if (nouveauStatut === StatutAO.ANNULE) {
+      this.publisher.publishAoAnnule({
+        aoId: id,
+        annuleAt: new Date(),
+      });
+    }
+
+    return updated;
   }
 
   // --------------------------------------------------------------------------
@@ -174,7 +232,7 @@ export class AppelOffresService {
     await this.prisma.retraitCdc.create({
       data: {
         documentCdcId: document.id,
-        operateurId, // Vient du User Authentifié (Mock pour l'instant)
+        operateurId,
       },
     });
 

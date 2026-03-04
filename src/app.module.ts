@@ -1,15 +1,14 @@
 import { Module } from '@nestjs/common';
-
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { CacheModule } from '@nestjs/cache-manager';
 import { redisStore } from 'cache-manager-ioredis-yet';
-import { ClientsModule, Transport } from '@nestjs/microservices';
 import { PrismaModule } from './prisma/prisma.module';
 import { AppelOffresModule } from './modules/appel-offres/appel-offres.module';
 import { LotsModule } from './modules/lots/lots.module';
 import { CriteresEligibiliteModule } from './modules/criteres-eligibilite/criteres-eligibilite.module';
 import { CriteresEvaluationModule } from './modules/criteres-evaluation/criteres-evaluation.module';
 import { StorageModule } from './storage/storage.module';
+import { MessagingModule } from './messaging/messaging.module';
 
 @Module({
   imports: [
@@ -33,30 +32,6 @@ import { StorageModule } from './storage/storage.module';
       }),
     }),
 
-    // Configuration Message Broker (RabbitMQ)
-    ClientsModule.registerAsync([
-      {
-        name: 'RABBITMQ_EVENT_BUS',
-        imports: [ConfigModule],
-        inject: [ConfigService],
-        useFactory: (configService: ConfigService) => ({
-          transport: Transport.RMQ,
-          options: {
-            urls: [
-              configService.get<string>(
-                'RABBITMQ_URL',
-                'amqp://guest:guest@localhost:5672',
-              ),
-            ],
-            queue: configService.get<string>('RABBITMQ_QUEUE_AO', 'ao.queue'),
-            queueOptions: {
-              durable: true,
-            },
-          },
-        }),
-      },
-    ]),
-
     PrismaModule,
 
     // Modules métier
@@ -65,6 +40,9 @@ import { StorageModule } from './storage/storage.module';
     CriteresEligibiliteModule,
     CriteresEvaluationModule,
     StorageModule,
+
+    // Messagerie RabbitMQ (Publisher + Consumer enregistrés dans AppelOffresModule)
+    MessagingModule,
   ],
   controllers: [],
   providers: [],

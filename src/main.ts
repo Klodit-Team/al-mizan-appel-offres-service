@@ -2,11 +2,24 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import helmet from 'helmet';
 
 async function bootstrap() {
+  // ─── Mode Hybride : HTTP + Microservice RabbitMQ ──────────────────────────
   const app = await NestFactory.create(AppModule);
   const logger = new Logger('AppelsOffres-Bootstrap');
+
+  // Connecter le consumer RabbitMQ (écoute les événements entrants)
+  app.connectMicroservice<MicroserviceOptions>({
+    transport: Transport.RMQ,
+    options: {
+      urls: [process.env.RABBITMQ_URL ?? 'amqp://guest:guest@localhost:5672'],
+      queue: process.env.RABBITMQ_QUEUE_AO ?? 'ao.queue',
+      queueOptions: { durable: true },
+      noAck: false, // Accusé de réception manuel pour garantir la livraison
+    },
+  });
 
   // Security: HTTP headers
   app.use(helmet());
@@ -31,7 +44,6 @@ async function bootstrap() {
     )
     .setVersion('1.0')
     .addBearerAuth(
-      // Will use session ID from API Gateway in reality, but this models auth
       { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
       'session-auth',
     )
@@ -40,14 +52,16 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, document);
 
-  // Start Server
-  const port = process.env.PORT || 8003;
+  // Démarrer le consumer RabbitMQ AVANT le serveur HTTP
+  await app.startAllMicroservices();
+
+  // Démarrer le serveur HTTP
+  const port = process.env.PORT ?? 8003;
   await app.listen(port);
 
-  logger.log(`🚀 Microservice Appels d'Offres running on port ${port}`);
-  logger.log(
-    `📚 Swagger documentation accessible at: http://localhost:${port}/api/docs`,
-  );
+  logger.log(`🚀 HTTP Server: http://localhost:${port}/api`);
+  logger.log(`📚 Swagger: http://localhost:${port}/api/docs`);
+  logger.log(`🐇 RabbitMQ Consumer: écoute sur la queue "ao.queue"`);
 }
 
 bootstrap().catch((err) => {

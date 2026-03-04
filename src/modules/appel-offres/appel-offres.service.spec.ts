@@ -3,6 +3,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { AppelOffresService } from './appel-offres.service';
 import { PrismaService } from '../../prisma/prisma.service';
 import { StorageService } from '../../storage/storage.service';
+import { AoEventsPublisher } from '../../messaging/publishers/ao-events.publisher';
 import { ConflictException, NotFoundException } from '@nestjs/common';
 import { StatutAO } from '@prisma/client';
 
@@ -33,20 +34,26 @@ describe('AppelOffresService', () => {
     getPresignedDownloadUrl: jest.fn(),
   };
 
+  // Mock du publisher — toutes les méthodes sont des no-ops dans les tests unitaires
+  const mockAoEventsPublisher = {
+    publishAoCreated: jest.fn(),
+    publishAoPublished: jest.fn(),
+    publishAoStatusChanged: jest.fn(),
+    publishAttributionProvisoire: jest.fn(),
+    publishAttributionDefinitive: jest.fn(),
+    publishAoAnnule: jest.fn(),
+    publishGreAGreSubmitted: jest.fn(),
+  };
+
   beforeEach(async () => {
     jest.clearAllMocks();
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AppelOffresService,
-        {
-          provide: PrismaService,
-          useValue: mockPrismaService,
-        },
-        {
-          provide: StorageService,
-          useValue: mockStorageService,
-        },
+        { provide: PrismaService, useValue: mockPrismaService },
+        { provide: StorageService, useValue: mockStorageService },
+        { provide: AoEventsPublisher, useValue: mockAoEventsPublisher },
       ],
     }).compile();
 
