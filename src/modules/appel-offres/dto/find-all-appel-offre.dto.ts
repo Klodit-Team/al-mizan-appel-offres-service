@@ -5,7 +5,7 @@ import { Type } from 'class-transformer';
 
 export class FindAllAppelOffresDto {
   @ApiProperty({ required: false, description: 'Filtrer par wilaya' })
-  @IsString()
+  @IsString({ message: 'La wilaya doit être une chaîne de caractères' })
   @IsOptional()
   wilaya?: string;
 
@@ -13,7 +13,9 @@ export class FindAllAppelOffresDto {
     required: false,
     description: "Filtrer par secteur d'activité",
   })
-  @IsString()
+  @IsString({
+    message: "Le secteur d'activité doit être une chaîne de caractères",
+  })
   @IsOptional()
   secteurActivite?: string;
 
@@ -41,8 +43,8 @@ export class FindAllAppelOffresDto {
     default: 1,
   })
   @Type(() => Number)
-  @IsInt()
-  @Min(1)
+  @IsInt({ message: 'Le numéro de la page doit être un nombre entier' })
+  @Min(1, { message: 'Le numéro de la page doit être supérieur ou égal à 1' })
   @IsOptional()
   page?: number = 1;
 
@@ -52,8 +54,12 @@ export class FindAllAppelOffresDto {
     default: 10,
   })
   @Type(() => Number)
-  @IsInt()
-  @Min(1)
+  @IsInt({
+    message: 'Le nombre de résultats par page doit être un nombre entier',
+  })
+  @Min(1, {
+    message: 'Le nombre de résultats par page doit être supérieur ou égal à 1',
+  })
   @IsOptional()
   limit?: number = 10;
 }

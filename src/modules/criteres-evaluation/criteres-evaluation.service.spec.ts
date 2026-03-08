@@ -2,7 +2,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { CriteresEvaluationService } from './criteres-evaluation.service';
 import { PrismaService } from '../../prisma/prisma.service';
-import { NotFoundException, ConflictException } from '@nestjs/common';
+import {
+  NotFoundException,
+  ConflictException,
+  BadRequestException,
+} from '@nestjs/common';
 import { StatutAO, CategorieCritereEvaluation } from '@prisma/client';
 
 describe('CriteresEvaluationService', () => {
@@ -163,7 +167,7 @@ describe('CriteresEvaluationService', () => {
   });
 
   describe('remove', () => {
-    it("doit lever Error si le critère n'appartient pas à l'AO", async () => {
+    it("doit lever BadRequestException si le critère n'appartient pas à l'AO", async () => {
       prisma.appelOffres.findUnique.mockResolvedValueOnce({ id: 'ao-id' });
       prisma.critereEvaluation.findUnique.mockResolvedValueOnce({
         id: 'crit-id',
@@ -171,7 +175,7 @@ describe('CriteresEvaluationService', () => {
       });
 
       await expect(service.remove('ao-id', 'crit-id')).rejects.toThrow(
-        "Le critère n'est pas lié à cet Appel d'Offres",
+        BadRequestException,
       );
     });
 

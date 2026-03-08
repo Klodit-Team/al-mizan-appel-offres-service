@@ -8,7 +8,7 @@ export class UploadCdcDto {
     example: 2000,
     required: false,
   })
-  @IsOptional({ message: 'Le prix de retrait est optionnel' })
+  @IsOptional()
   @Type(() => Number)
   @IsNumber({}, { message: 'Le prix de retrait doit être un nombre' })
   @Min(0, { message: 'Le prix de retrait doit être supérieur ou égal à 0' })

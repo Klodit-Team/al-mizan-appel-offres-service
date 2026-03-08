@@ -10,24 +10,22 @@ import { CreateLotDto } from './dto/create-lot.dto';
 export class LotsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  /**
-   * Crée un lot attaché à un Appel d'Offres.
-   *
-   * Règles métier :
-   *  1. L'AO doit exister → sinon 404 Not Found
-   *  2. L'AO doit être au statut BROUILLON → sinon 409 Conflict
-   */
-  async create(aoId: string, createLotDto: CreateLotDto) {
-    // 1. Vérifier que l'AO parent existe
+  // ─── Méthode utilitaire privée (évite la duplication du 404) ──────────────
+  private async findAoOrFail(aoId: string) {
     const ao = await this.prisma.appelOffres.findUnique({
       where: { id: aoId },
     });
-
     if (!ao) {
       throw new NotFoundException(
         `L'Appel d'Offres avec l'ID "${aoId}" n'existe pas.`,
       );
     }
+    return ao;
+  }
+
+  async create(aoId: string, createLotDto: CreateLotDto) {
+    // 1. Vérifier que l'AO parent existe
+    const ao = await this.findAoOrFail(aoId);
 
     // 2. Vérifier que l'AO est au statut BROUILLON
     if (ao.statut !== 'BROUILLON') {
@@ -51,16 +49,8 @@ export class LotsService {
    * Récupère tous les lots d'un Appel d'Offres.
    */
   async findAll(aoId: string) {
-    // Vérifie que l'AO existe
-    const ao = await this.prisma.appelOffres.findUnique({
-      where: { id: aoId },
-    });
-
-    if (!ao) {
-      throw new NotFoundException(
-        `L'Appel d'Offres avec l'ID "${aoId}" n'existe pas.`,
-      );
-    }
+    // Vérifie que l'AO existe (lève NotFoundException s'il n'existe pas)
+    await this.findAoOrFail(aoId);
 
     return this.prisma.lot.findMany({
       where: { aoId },

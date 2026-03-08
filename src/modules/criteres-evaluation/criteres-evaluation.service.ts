@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   ConflictException,
+  BadRequestException,
 } from '@nestjs/common';
 import { CreateCriteresEvaluationDto } from './dto/create-criteres-evaluation.dto';
 import { UpdateCriteresEvaluationDto } from './dto/update-criteres-evaluation.dto';
@@ -119,9 +120,11 @@ export class CriteresEvaluationService {
       );
     }
 
-    // Vérifie que l'AO n'est pas déjà publié
+    // Vérifie que le critère appartient bien à cet AO
     if (critere.aoId !== aoId) {
-      throw new Error("Le critère n'est pas lié à cet Appel d'Offres");
+      throw new BadRequestException(
+        `Le critère "${id}" n'est pas lié à l'AO "${aoId}".`,
+      );
     }
 
     // Supprime le critère

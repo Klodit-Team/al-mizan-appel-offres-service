@@ -53,164 +53,243 @@ enum TypeAttribution {
   DEFINITIVE
 }
 
+enum TypeJustificationGreAGre {
+  URGENCE
+  TECHNIQUE
+  ECONOMIQUE
+  JURIDIQUE
+  AUTRE
+}
+
+enum StatutDemandeGreAGre {
+  BROUILLON
+  SOUMISE
+  EN_ANALYSE_IA
+  ACCEPTEE
+  REJETEE
+  EN_REVISION
+}
+
+enum RecommandationIa {
+  ACCEPTER
+  REJETER
+  DEMANDER_COMPLEMENTS
+}
+
+enum DecisionControleurGreAGre {
+  ACCEPTER
+  REJETER
+  DEMANDER_COMPLEMENTS
+}
+
 // --------------------------------------
 // MODELS
 // --------------------------------------
 
 model AppelOffres {
-  id                      String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  reference               String   @unique
-  objet                   String
-  typeProcedure           TypeProcedure @map("type_procedure")
-  montantEstime           Decimal  @map("montant_estime") @db.Decimal(15, 2)
-  datePublication         DateTime? @map("date_publication")
-  dateLimiteSoumission    DateTime @map("date_limite_soumission")
-  dateLimiteRetraitCdc    DateTime @map("date_limite_retrait_cdc")
-  statut                  StatutAO @default(BROUILLON)
-  serviceContractantId    String   @map("service_contractant_id") // Reference externe auth
-  wilaya                  String
-  secteurActivite         String   @map("secteur_activite")
+  id                   String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  reference            String        @unique
+  objet                String
+  typeProcedure        TypeProcedure @map("type_procedure")
+  montantEstime        Decimal       @map("montant_estime") @db.Decimal(15, 2)
+  datePublication      DateTime?     @map("date_publication")
+  dateLimiteSoumission DateTime      @map("date_limite_soumission")
+  dateLimiteRetraitCdc DateTime      @map("date_limite_retrait_cdc")
+  statut               StatutAO      @default(BROUILLON)
+  serviceContractantId String        @map("service_contractant_id") // Reference externe auth
+  wilaya               String
+  secteurActivite      String        @map("secteur_activite")
 
-  createdAt               DateTime @default(now()) @map("created_at")
-  updatedAt               DateTime @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
-  lots                    Lot[]
-  criteresEligibilite     CritereEligibilite[]
-  criteresEvaluation      CritereEvaluation[]
-  documentsCdc            DocumentCdc[]
-  avisAo                  AvisAo[]
-  attributions            Attribution[]
-  marches                 Marche[]
-  demandeGreAGre          DemandeGreAGre?
+  lots                Lot[]
+  criteresEligibilite CritereEligibilite[]
+  criteresEvaluation  CritereEvaluation[]
+  documentsCdc        DocumentCdc[]
+  avisAo              AvisAo[]
+  attributions        Attribution[]
+  marches             Marche[]
+  demandeGreAGre      DemandeGreAGre?
 
   @@map("appel_offres")
 }
 
 model Lot {
-  id                      String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  aoId                    String   @map("ao_id") @db.Uuid
-  numero                  String
-  designation             String
-  montantEstime           Decimal  @map("montant_estime") @db.Decimal(15, 2)
-  statut                  String?
+  id            String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  aoId          String  @map("ao_id") @db.Uuid
+  numero        String
+  designation   String
+  montantEstime Decimal @map("montant_estime") @db.Decimal(15, 2)
+  statut        String?
 
-  appelOffres             AppelOffres @relation(fields: [aoId], references: [id], onDelete: Cascade)
-  criteresEvaluation      CritereEvaluation[]
-  attributions            Attribution[]
+  appelOffres        AppelOffres         @relation(fields: [aoId], references: [id], onDelete: Cascade)
+  criteresEvaluation CritereEvaluation[]
+  attributions       Attribution[]
 
   @@map("lot")
 }
 
 model CritereEligibilite {
-  id                      String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  aoId                    String   @map("ao_id") @db.Uuid
-  libelle                 String
-  type                    TypeCritereEligibilite
-  valeurMinimale          String   @map("valeur_minimale")
-  eliminatoire            Boolean  @default(true)
+  id             String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  aoId           String                 @map("ao_id") @db.Uuid
+  libelle        String
+  type           TypeCritereEligibilite
+  valeurMinimale String                 @map("valeur_minimale")
+  eliminatoire   Boolean                @default(true)
 
-  appelOffres             AppelOffres @relation(fields: [aoId], references: [id], onDelete: Cascade)
+  appelOffres AppelOffres @relation(fields: [aoId], references: [id], onDelete: Cascade)
 
   @@map("critere_eligibilite")
 }
 
 model CritereEvaluation {
-  id                      String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  aoId                    String   @map("ao_id") @db.Uuid
-  lotId                   String?  @map("lot_id") @db.Uuid
-  libelle                 String
-  categorie               CategorieCritereEvaluation
-  poids                   Float    // %
-  noteEliminatoire        Float?   @map("note_eliminatoire")
+  id               String                     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  aoId             String                     @map("ao_id") @db.Uuid
+  lotId            String?                    @map("lot_id") @db.Uuid
+  libelle          String
+  categorie        CategorieCritereEvaluation
+  poids            Float // %
+  noteEliminatoire Float?                     @map("note_eliminatoire")
 
-  appelOffres             AppelOffres @relation(fields: [aoId], references: [id], onDelete: Cascade)
-  lot                     Lot?        @relation(fields: [lotId], references: [id], onDelete: Cascade)
+  appelOffres AppelOffres @relation(fields: [aoId], references: [id], onDelete: Cascade)
+  lot         Lot?        @relation(fields: [lotId], references: [id], onDelete: Cascade)
 
   @@map("critere_evaluation")
 }
 
 model DocumentCdc {
-  id                      String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  aoId                    String   @map("ao_id") @db.Uuid
-  fichierUrl              String   @map("fichier_url")
-  hashSha256              String   @map("hash_sha256")
-  prixRetrait             Decimal  @map("prix_retrait") @db.Decimal(15, 2)
-  publieAt                DateTime @map("publie_at")
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  aoId        String   @map("ao_id") @db.Uuid
+  fichierUrl  String   @map("fichier_url")
+  hashSha256  String   @map("hash_sha256")
+  prixRetrait Decimal  @map("prix_retrait") @db.Decimal(15, 2)
+  publieAt    DateTime @map("publie_at")
 
-  appelOffres             AppelOffres @relation(fields: [aoId], references: [id], onDelete: Cascade)
-  retraitsCdc             RetraitCdc[]
+  appelOffres AppelOffres  @relation(fields: [aoId], references: [id], onDelete: Cascade)
+  retraitsCdc RetraitCdc[]
 
   @@map("document_cdc")
 }
 
 model RetraitCdc {
-  id                      String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  documentCdcId           String   @map("document_cdc_id") @db.Uuid
-  operateurId             String   @map("operateur_id") // Reference externe (User)
-  dateRetrait             DateTime @default(now()) @map("date_retrait")
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  documentCdcId String   @map("document_cdc_id") @db.Uuid
+  operateurId   String   @map("operateur_id") // Reference externe (User)
+  dateRetrait   DateTime @default(now()) @map("date_retrait")
 
-  documentCdc             DocumentCdc @relation(fields: [documentCdcId], references: [id], onDelete: Cascade)
+  documentCdc DocumentCdc @relation(fields: [documentCdcId], references: [id], onDelete: Cascade)
 
   @@map("retrait_cdc")
 }
 
 model AvisAo {
-  id                      String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  aoId                    String   @map("ao_id") @db.Uuid
-  typeAvis                TypeAvis @map("type_avis")
-  contenuBomop            String   @map("contenu_bomop") @db.Text
-  datePublication         DateTime @map("date_publication")
-  publieBomop             Boolean  @default(false) @map("publie_bomop")
-  publiePresse            Boolean  @default(false) @map("publie_presse")
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  aoId            String   @map("ao_id") @db.Uuid
+  typeAvis        TypeAvis @map("type_avis")
+  contenuBomop    String   @map("contenu_bomop") @db.Text
+  datePublication DateTime @map("date_publication")
+  publieBomop     Boolean  @default(false) @map("publie_bomop")
+  publiePresse    Boolean  @default(false) @map("publie_presse")
 
-  appelOffres             AppelOffres @relation(fields: [aoId], references: [id], onDelete: Cascade)
+  appelOffres AppelOffres @relation(fields: [aoId], references: [id], onDelete: Cascade)
 
   @@map("avis_ao")
 }
 
 model Attribution {
-  id                      String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  aoId                    String   @map("ao_id") @db.Uuid
-  lotId                   String?  @map("lot_id") @db.Uuid
-  soumissionId            String   @map("soumission_id") // Ref vers microservice Soumission
-  type                    TypeAttribution
-  dateAttribution         DateTime @map("date_attribution")
-  dateFinRecours          DateTime @map("date_fin_recours")
-  montantAttribue         Decimal  @map("montant_attribue") @db.Decimal(15, 2)
+  id              String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  aoId            String          @map("ao_id") @db.Uuid
+  lotId           String?         @map("lot_id") @db.Uuid
+  soumissionId    String          @map("soumission_id") // Ref vers microservice Soumission
+  type            TypeAttribution
+  dateAttribution DateTime        @map("date_attribution")
+  dateFinRecours  DateTime        @map("date_fin_recours")
+  montantAttribue Decimal         @map("montant_attribue") @db.Decimal(15, 2)
 
-  appelOffres             AppelOffres @relation(fields: [aoId], references: [id], onDelete: Cascade)
-  lot                     Lot?        @relation(fields: [lotId], references: [id], onDelete: Cascade)
-  marche                  Marche?
+  appelOffres AppelOffres @relation(fields: [aoId], references: [id], onDelete: Cascade)
+  lot         Lot?        @relation(fields: [lotId], references: [id], onDelete: Cascade)
+  marche      Marche?
 
   @@map("attribution")
 }
 
 model Marche {
-  id                      String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  aoId                    String   @map("ao_id") @db.Uuid
-  attributionId           String   @unique @map("attribution_id") @db.Uuid
-  referenceMarche         String   @unique @map("reference_marche")
-  montantSigne            Decimal  @map("montant_signe") @db.Decimal(15, 2)
-  dateSignature           DateTime @map("date_signature")
-  delaiExecution          Int      @map("delai_execution") // en jours
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  aoId            String   @map("ao_id") @db.Uuid
+  attributionId   String   @unique @map("attribution_id") @db.Uuid
+  referenceMarche String   @unique @map("reference_marche")
+  montantSigne    Decimal  @map("montant_signe") @db.Decimal(15, 2)
+  dateSignature   DateTime @map("date_signature")
+  delaiExecution  Int      @map("delai_execution") // en jours
 
-  appelOffres             AppelOffres @relation(fields: [aoId], references: [id], onDelete: Cascade)
-  attribution             Attribution @relation(fields: [attributionId], references: [id], onDelete: Cascade)
+  appelOffres AppelOffres @relation(fields: [aoId], references: [id], onDelete: Cascade)
+  attribution Attribution @relation(fields: [attributionId], references: [id], onDelete: Cascade)
 
   @@map("marche")
 }
 
 model DemandeGreAGre {
-  id                      String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  aoId                    String   @unique @map("ao_id") @db.Uuid
-  justification           String   @db.Text
-  piecesJointes           String[] @map("pieces_jointes") // Tableaux de chaines ds PostgreSQL
-  scoreConformiteIa       Float?   @map("score_conformite_ia")
-  recommandationIa        String?  @map("recommandation_ia") @db.Text
-  decisionControleur      Boolean? @map("decision_controleur")
-  statut                  String
+  id                   String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  aoId                 String               @unique @map("ao_id") @db.Uuid
+  serviceContractantId String               @map("service_contractant_id") // Appears in the design
+  statut               StatutDemandeGreAGre @default(BROUILLON)
+  createdAt            DateTime             @default(now()) @map("created_at")
+  updatedAt            DateTime             @updatedAt @map("updated_at")
 
-  appelOffres             AppelOffres @relation(fields: [aoId], references: [id], onDelete: Cascade)
+  appelOffres    AppelOffres            @relation(fields: [aoId], references: [id], onDelete: Cascade)
+  justifications JustificationGreAGre[]
+  evaluationsIa  EvaluationIaGreAGre[]
+  decisions      DecisionGreAGre[]
 
-  @@map("demande_gre_a_gre")
+  @@map("demandes_gre_a_gre")
+}
+
+model JustificationGreAGre {
+  id                String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  demandeId         String                   @map("demande_id") @db.Uuid
+  typeJustification TypeJustificationGreAGre @map("type_justification")
+  description       String                   @db.Text
+  fichierUrl        String?                  @map("fichier_url") @db.VarChar(500)
+  ordre             Int
+  createdAt         DateTime                 @default(now()) @map("created_at")
+
+  demande DemandeGreAGre @relation(fields: [demandeId], references: [id], onDelete: Cascade)
+
+  @@map("justifications_gre_a_gre")
+}
+
+model EvaluationIaGreAGre {
+  id               String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  demandeId        String           @unique @map("demande_id") @db.Uuid
+  modeleIa         String           @map("modele_ia") @db.VarChar(100)
+  scoreConformite  Decimal          @map("score_conformite") @db.Decimal(5, 2)
+  recommandation   RecommandationIa
+  justificationIa  String           @map("justification_ia") @db.Text
+  criteresAnalyses Json             @map("criteres_analyses")
+  confianceScore   Decimal          @map("confiance_score") @db.Decimal(5, 2)
+  dateAnalyse      DateTime         @default(now()) @map("date_analyse")
+  createdAt        DateTime         @default(now()) @map("created_at")
+
+  demande  DemandeGreAGre   @relation(fields: [demandeId], references: [id], onDelete: Cascade)
+  decision DecisionGreAGre?
+
+  @@map("evaluations_ia_gre_a_gre")
+}
+
+model DecisionGreAGre {
+  id             String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  demandeId      String                    @unique @map("demande_id") @db.Uuid
+  evaluationIaId String?                   @unique @map("evaluation_ia_id") @db.Uuid
+  controleurId   String                    @map("controleur_id") // User externe
+  decisionFinale DecisionControleurGreAGre @map("decision_finale")
+  motifDecision  String                    @map("motif_decision") @db.Text
+  correspondIa   Boolean                   @map("correspond_ia")
+  dateDecision   DateTime                  @default(now()) @map("date_decision")
+  createdAt      DateTime                  @default(now()) @map("created_at")
+
+  demande      DemandeGreAGre       @relation(fields: [demandeId], references: [id], onDelete: Cascade)
+  evaluationIa EvaluationIaGreAGre? @relation(fields: [evaluationIaId], references: [id])
+
+  @@map("decisions_gre_a_gre")
 }

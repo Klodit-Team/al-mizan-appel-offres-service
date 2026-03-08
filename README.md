@@ -126,6 +126,20 @@ Le système couvre **7 processus métiers** correspondant au cycle de vie comple
 
 ---
 
+### 🟣 Processus Externe — Procédure Dérogatoire de Gré-à-Gré Assistée par IA
+
+Si l'Appel d'Offres est de type "Gré-à-Gré", le processus de publication classique est suspendu au profit d'un workflow de double validation, conforme à l'Art. 41 de la Loi 23-12.
+
+| Étape | Acteur                   | Action                                                                   | US associée |
+| ----- | ------------------------ | ------------------------------------------------------------------------ | ----------- |
+| E.1   | Service Contractant (SC) | **Soumet un dossier justificatif** (motivations + pièces jointes MinIO)  | US 11       |
+| E.2   | IA (NLP)                 | **Analyse le dossier** et émet un score de conformité + recommandation   | US 12       |
+| E.3   | Système                  | Transmet le dossier et le rapport IA au Contrôleur compétent             | -           |
+| E.4   | Contrôleur               | **Valide ou Rejette la demande** après examen du score IA et des pièces  | US 13       |
+| E.5   | SC                       | Si validé : Poursuit la procédure (attribution directe). Si rejeté : Fin.| -           |
+
+---
+
 ## 3. Contenu du Microservice Appels d'Offres
 
 > **Service Appels d'Offres** · Port `8003` · Base de données `ao_db` (PostgreSQL)
@@ -353,9 +367,21 @@ Client / API Gateway
    - Implémentation complète de l'Avis réglementaire (`AvisAo`), de l'`Attribution` et de la Fiche `Marche`.
    - L'endpoint listant les Appels d'Offres permet maintenant une recherche filtrée dynamique avec pagination, de façon insensible à la casse.
 
-### Prochaines étapes : La Dernière Phase !
+10. **Renforcement de la Robustesse Métier (Phases 3–5.5 RENFORCÉES)** :
+    - Ajout de méthodes utilitaires privées `findXOrFail()` dans `AvisAoService`, `AttributionService` et `MarcheService` pour renvoyer proprement des `NotFoundException` (404) au lieu d'erreurs Prisma brutes (`P2025`).
+    - **Validation croisée de propriété** : `AttributionService` vérifie que le `lotId` fourni appartient à l'AO ciblé ; `MarcheService` vérifie que l'`attributionId` appartient à l'AO concerné, empêchant tout contournement inter-AO.
+    - **Vérification d'unicité (409 Conflict)** : `MarcheService` empêche la création d'un Marché dont la `referenceMarche` ou l'`attributionId` est déjà utilisé par un autre Marché existant.
+    - **Extraction JWT via `@Req()`** : Les endpoints nécessitant une identité utilisateur (`getCdcDownloadUrl`, `validate` gré-à-gré) lisent désormais `req.user?.sub` depuis le token JWT décodé par Passport, au lieu d'un ID simulé en dur.
 
-- **Phase 6** : Sécurité avec le RBAC (`@Roles(...)`) et intégration avec les Workflows d'Intelligence Artificielle (Gré-à-Gré).
+11. **Workflow Dérogatoire Gré-à-Gré (Phase 6 PARTIELLE — US 11 & US 13 livrées)** :
+    - **US 11 — Soumission** (`POST /appels-offres/:id/gre-a-gre/soumettre`) : Vérification que l'AO est de type `GRE_A_GRE`, prévention des doublons, création en bloc des `JustificationGreAGre` avec enum `TypeJustificationGreAGre`, et émission de l'événement `ao.gre_a_gre.submitted` vers RabbitMQ pour déclencher l'analyse IA.
+    - **US 13 — Décision du Contrôleur** (`PATCH /appels-offres/gre-a-gre/:id/valider`) : Extraction sécurisée de l'identité du contrôleur depuis le payload JWT (`req.user.sub`), logique transactionnelle `$transaction` atomique créant l'audit `DecisionGreAGre` (avec corrélation IA `correspondIa`), mise à jour du statut de la demande (`ACCEPTEE`/`REJETEE`), mise à jour de l'AO parent (`EN_COURS`/`ANNULE`), et émission de l'événement `ao.gre_a_gre.validated` vers RabbitMQ.
+    - **US 12 (IA) — En attente** : La réception de l'événement `ia.gre_a_gre.scored` est déclarée dans `RecoursConsumer` ; le stockage du score dans `EvaluationIaGreAGre` reste à implémenter.
+
+### Prochaines étapes :
+
+- **US 12 (Analyse IA)** : Compléter le handler `ia.gre_a_gre.scored` dans le consumer pour stocker le score de conformité IA et la recommandation dans la table `EvaluationIaGreAGre` (stub présent dans `RecoursConsumer`).
+- **Phase 7** : Sécurité Tolérance Zéro avec le système Role-Based Access Control (`@Roles(...)` + `RolesGuard` + validation JWT hors-ligne via `JwtService`).
 
 ### 📊 Suivi du Backlog Fonctionnel (15 User Stories)
 
@@ -371,28 +397,29 @@ Client / API Gateway
 |  ✅  | 8   | **Prononcer l'attribution provisoire** (lancer période recours)                | SC           | 🔴 Haute   |
 |  ✅  | 9   | **Prononcer l'attribution définitive** (après expiration recours)              | SC           | 🔴 Haute   |
 |  ✅  | 10  | **Créer la fiche marché** (formalisation contractuelle)                        | SC           | 🟡 Moyenne |
-|  ⬜  | 11  | **Soumettre une demande gré-à-gré** (justifications + pièces obligatoires)     | SC           | 🟡 Moyenne |
+|  ✅  | 11  | **Soumettre une demande gré-à-gré** (justifications + pièces obligatoires)     | SC           | 🟡 Moyenne |
 |  ⬜  | 12  | **Analyse IA d'une demande gré-à-gré** (score de conformité + recommandation)  | Système / IA | 🟡 Moyenne |
-|  ⬜  | 13  | **Valider / rejeter une demande gré-à-gré** (comparaison recommandation IA)    | Contrôleur   | 🟡 Moyenne |
+|  ✅  | 13  | **Valider / rejeter une demande gré-à-gré** (comparaison recommandation IA)    | Contrôleur   | 🟡 Moyenne |
 |  ✅  | 14  | **Consulter les AO publiés** (filtres : type, wilaya, secteur — pagination)    | OE           | 🔴 Haute   |
 |  ✅  | 15  | **Retirer le CDC** (téléchargement avec traçabilité + URL présignée)           | OE           | 🔴 Haute   |
 
-> **Progression : 12 / 15 User Stories livrées** (Phases 1, 2, 3, 4, 5 & 5.5 complètes)
+> **Progression : 14 / 15 User Stories livrées** (Phases 1, 2, 3, 4, 5, 5.5 complètes + Phase 6 partielle — US 11 & US 13)
 
 ### 🧪 Couverture des Tests Unitaires (Jest)
 
-La suite de tests a été exécutée avec succès (`95 tests passed` sur `16 Test Suites`). Tous les accès externes (PostgreSQL via Prisma, MinIO via AWS SDK) sont intégralement mockés.
+La suite de tests a été exécutée avec succès (`127 tests passed` sur `18 Test Suites`). Tous les accès externes (PostgreSQL via Prisma, MinIO via AWS SDK, RabbitMQ via ClientProxy) sont intégralement mockés.
 
 | Composant | Fiche(s) | Méthodes Validées | Comportements Clés Testés |
 | :--- | :--- | :--- | :--- |
 | **Storage (S3)** | `storage.service.spec.ts` | `uploadFile`, `getPresignedDownloadUrl` | Configuration client S3, paramètres AWS `PutObjectCommand`, Exceptions. |
-| **AppelOffres**  | `Controller` & `Service` | `uploadCdc`, endpoints CRUD... | Hachage du CDC, règles métiers strictes de la machine à état, URLs présignées MinIO. |
-| **Lots** | `Controller` & `Service` | Endpoints CRUD | Transferts DTO, exceptions liées au statut AO (`ConflictException`). |
-| **Éligibilité** | `Controller` & `Service` | Endpoints CRUD | Routing des arguments liés à l'AO, types énumérés, associations inter-tables. |
-| **Évaluation** | `Controller` & `Service` | Endpoints CRUD | Impossibilité d'altération sans relations correctes, validations `@nestjs/swagger`. |
-| **AvisAo** | `Controller` & `Service` | Endpoints CRUD | Mocks des méthodes de publications BOMOP et Presse, injection module Prisma isolée. |
-| **Attribution** | `Controller` & `Service` | Endpoints CRUD | Validation complète du DTO d'attribution (`montantAttribue`, timestamp etc.), mock Prisma. |
-| **Marche** | `Controller` & `Service` | Endpoints CRUD | Process correct de contrat, signature, délais, sans impacter la base de données réelle. |
+| **AppelOffres**  | `Controller` & `Service` | `uploadCdc`, `getCdcDownloadUrl`, endpoints CRUD | Hachage du CDC, règles métiers strictes de la machine à états, URLs présignées MinIO, extraction `operateurId` depuis JWT. |
+| **Lots** | `Controller` & `Service` | Endpoints CRUD | Transferts DTO, exceptions liées au statut AO (`ConflictException`), `NotFoundException` si AO absent. |
+| **Éligibilité** | `Controller` & `Service` | Endpoints CRUD | Routing des arguments liés à l'AO, types énumérés `TypeCritereEligibilite`, associations inter-tables. |
+| **Évaluation** | `Controller` & `Service` | Endpoints CRUD | Validation croisée AO/critère, enum `CategorieCritereEvaluation`, `ConflictException` si AO non-BROUILLON. |
+| **AvisAo** | `Controller` & `Service` | Endpoints CRUD | Vérification type `AO_OUVERT`, `findAoOrFail`, `findAvisAoOrFail`, injection module Prisma isolée. |
+| **Attribution** | `Controller` & `Service` | Endpoints CRUD | Validation croisée lot/AO, `findAttributionOrFail`, `BadRequestException` si lot n'appartient pas à l'AO. |
+| **Marche** | `Controller` & `Service` | Endpoints CRUD | Validation croisée attribution/AO, `ConflictException` sur doublon `referenceMarche` ou `attributionId`. |
+| **Gré-à-Gré** | `Controller` & `Service` | `submit`, `validate` | Vérification type `GRE_A_GRE`, anti-doublon demande, émission événements RabbitMQ, transaction `$transaction`, extraction `controleurId` depuis JWT (`req.user.sub`), fallback `anonymous`, corrélation IA (`correspondIa`). |
 
 ---
 

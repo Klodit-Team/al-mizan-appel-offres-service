@@ -2,10 +2,16 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { AppelOffresController } from './appel-offres.controller';
 import { AppelOffresService } from './appel-offres.service';
 import { BadRequestException } from '@nestjs/common';
+import { Request } from 'express';
+
+const MOCK_OPERATEUR_ID = 'operateur-jwt-sub-uuid';
+
+const mockReq = {
+  user: { sub: MOCK_OPERATEUR_ID },
+} as Request & { user: { sub: string } };
 
 describe('AppelOffresController', () => {
   let controller: AppelOffresController;
-  // service est obtenu via le module NestJS (utilisé pour les mocks)
 
   const mockAppelOffresService = {
     create: jest.fn(),
@@ -74,17 +80,30 @@ describe('AppelOffresController', () => {
   });
 
   describe('getCdcDownloadUrl', () => {
-    it("doit appeler le service avec un mock operateurId pour l'instant", async () => {
+    it("doit appeler le service avec l'operateurId extrait du JWT", async () => {
       mockAppelOffresService.getPresignedDownloadUrl.mockResolvedValueOnce({
         downloadUrl: 'http://test',
       });
 
-      const result = await controller.getCdcDownloadUrl('ao-id');
+      const result = await controller.getCdcDownloadUrl('ao-id', mockReq);
 
       expect(
         mockAppelOffresService.getPresignedDownloadUrl,
-      ).toHaveBeenCalledWith('ao-id', '123e4567-e89b-12d3-a456-426614174000');
+      ).toHaveBeenCalledWith('ao-id', MOCK_OPERATEUR_ID);
       expect(result).toEqual({ downloadUrl: 'http://test' });
+    });
+
+    it("doit utiliser 'anonymous' si req.user est absent", async () => {
+      const reqSansUser = {} as Request & { user?: { sub: string } };
+      mockAppelOffresService.getPresignedDownloadUrl.mockResolvedValueOnce({
+        downloadUrl: 'http://test',
+      });
+
+      await controller.getCdcDownloadUrl('ao-id', reqSansUser);
+
+      expect(
+        mockAppelOffresService.getPresignedDownloadUrl,
+      ).toHaveBeenCalledWith('ao-id', 'anonymous');
     });
   });
 });

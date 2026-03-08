@@ -48,6 +48,14 @@ export interface AoGreAGreSubmittedPayload {
   submittedAt: Date;
 }
 
+export interface AoGreAGreValidatedPayload {
+  gagId: string;
+  aoId: string;
+  decision: string;
+  motif: string;
+  validatedAt: Date;
+}
+
 // ─── Publisher ────────────────────────────────────────────────────────────────
 
 @Injectable()
@@ -126,5 +134,15 @@ export class AoEventsPublisher {
       `📢 EMIT ao.gre_a_gre.submitted — GAG: ${payload.gagId} | AO: ${payload.aoId}`,
     );
     this.client.emit('ao.gre_a_gre.submitted', payload);
+  }
+  /**
+   * Émis quand une demande de gré-à-gré est validée (Approuvée / Rejetée) par le contrôleur (Phase 6).
+   * Consommateurs : Notifications (Service Contractant)
+   */
+  publishGreAGreValidated(payload: AoGreAGreValidatedPayload): void {
+    this.logger.log(
+      `📢 EMIT ao.gre_a_gre.validated — GAG: ${payload.gagId} | AO: ${payload.aoId} | DECISION: ${payload.decision}`,
+    );
+    this.client.emit('ao.gre_a_gre.validated', payload);
   }
 }

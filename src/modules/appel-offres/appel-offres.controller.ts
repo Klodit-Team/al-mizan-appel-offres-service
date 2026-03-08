@@ -10,6 +10,7 @@ import {
   UploadedFile,
   BadRequestException,
   Query,
+  Req,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiConsumes, ApiOperation } from '@nestjs/swagger';
@@ -19,6 +20,7 @@ import { UpdateAppelOffreDto } from './dto/update-appel-offre.dto';
 import { UpdateStatutDto } from './dto/update-statut.dto';
 import { UploadCdcDto } from './dto/upload-cdc.dto';
 import { FindAllAppelOffresDto } from './dto/find-all-appel-offre.dto';
+import { Request } from 'express';
 
 @Controller('appel-offres')
 export class AppelOffresController {
@@ -97,11 +99,13 @@ export class AppelOffresController {
   @ApiOperation({
     summary: 'Obtenir un lien de téléchargement sécurisé du CDC',
   })
-  async getCdcDownloadUrl(@Param('id') id: string) {
-    // 💡 Ici, dans un vrai backend, on récupérerait l'ID de l'opérateur connecté
-    // depuis le Token (ex: req.user.id). Pour l'instant, on met un UUID mock.
-    const mockOperateurId = '123e4567-e89b-12d3-a456-426614174000';
-
-    return this.appelOffresService.getPresignedDownloadUrl(id, mockOperateurId);
+  async getCdcDownloadUrl(
+    @Param('id') id: string,
+    @Req() req: Request & { user?: { sub: string } },
+  ) {
+    // operateurId extrait du payload JWT (champ standard "sub")
+    // TODO: Activer le Guard JWT (@UseGuards(JwtAuthGuard)) quand le module Auth sera branché
+    const operateurId = req.user?.sub ?? 'anonymous';
+    return this.appelOffresService.getPresignedDownloadUrl(id, operateurId);
   }
 }
