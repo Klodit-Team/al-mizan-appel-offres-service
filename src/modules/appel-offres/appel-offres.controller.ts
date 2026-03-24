@@ -67,10 +67,7 @@ export class AppelOffresController {
 
   @Post(':id/cdc')
   @ApiOperation({ summary: 'Lier un Cahier des Charges (CDC) pré-uploadé' })
-  async uploadCdc(
-    @Param('id') id: string,
-    @Body() uploadCdcDto: UploadCdcDto,
-  ) {
+  async uploadCdc(@Param('id') id: string, @Body() uploadCdcDto: UploadCdcDto) {
     const prixRetrait = uploadCdcDto.prixRetrait
       ? Number(uploadCdcDto.prixRetrait)
       : 0;

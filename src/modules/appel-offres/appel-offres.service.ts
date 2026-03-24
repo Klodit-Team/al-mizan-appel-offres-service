@@ -205,11 +205,7 @@ export class AppelOffresService {
    * Lier un Cahier des Charges (CDC) pour l'AO correspondant.
    * Le fichier a déjà été uploadé dans le Document Service et on reçoit son documentId.
    */
-  async uploadCdc(
-    aoId: string,
-    documentId: string,
-    prixRetrait: number = 0,
-  ) {
+  async uploadCdc(aoId: string, documentId: string, prixRetrait: number = 0) {
     // 1. Vérification Métier
     const ao = await this.findOne(aoId);
 
@@ -260,7 +256,7 @@ export class AppelOffresService {
         ),
       );
       presignedUrl = String(response.data.url);
-    } catch (_error) {
+    } catch {
       throw new ConflictException(
         "Erreur lors de la communication avec le Document Service pour récupérer l'URL du fichier.",
       );

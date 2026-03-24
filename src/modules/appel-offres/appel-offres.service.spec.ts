@@ -37,7 +37,8 @@ describe('AppelOffresService', () => {
 
   const mockConfigService = {
     get: jest.fn((key: string, defaultVal?: string) => {
-      if (key === 'DOCUMENT_SERVICE_URL') return 'http://al-mizan-document-service:8005';
+      if (key === 'DOCUMENT_SERVICE_URL')
+        return 'http://al-mizan-document-service:8005';
       return defaultVal;
     }),
   };
@@ -80,9 +81,9 @@ describe('AppelOffresService', () => {
         statut: StatutAO.PUBLIE,
       });
 
-      await expect(
-        service.uploadCdc('ao-id', 'doc-123', 0),
-      ).rejects.toThrow(ConflictException);
+      await expect(service.uploadCdc('ao-id', 'doc-123', 0)).rejects.toThrow(
+        ConflictException,
+      );
     });
 
     it('doit lier le document dans Prisma', async () => {
@@ -91,11 +92,7 @@ describe('AppelOffresService', () => {
       });
       prisma.documentCdc.create.mockResolvedValueOnce({ id: 'cdc-123' });
 
-      const result = await service.uploadCdc(
-        'ao-id',
-        'doc-uuid',
-        500,
-      );
+      const result = await service.uploadCdc('ao-id', 'doc-uuid', 500);
 
       expect(prisma.documentCdc.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
@@ -147,4 +144,3 @@ describe('AppelOffresService', () => {
     });
   });
 });
-
