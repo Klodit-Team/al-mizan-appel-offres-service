@@ -10,12 +10,6 @@ interface RecoursExpiredPayload {
   aoId: string;
 }
 
-interface IaGreAGreScoredPayload {
-  gagId: string;
-  scoreConformite: number; // 0 à 100
-  recommandation: 'APPROUVER' | 'REJETER';
-}
-
 // ─── Consumer ─────────────────────────────────────────────────────────────────
 
 @Controller()
@@ -69,23 +63,5 @@ export class RecoursConsumer {
         error instanceof Error ? error.stack : String(error),
       );
     }
-  }
-
-  /**
-   * 🎧 CONSOMME : ia.gre_a_gre.scored
-   *
-   * Émis par le Service IA quand l'analyse de conformité d'un gré-à-gré est terminée.
-   * Action (Phase 6) : Stocker le score et la recommandation dans demande_gre_a_gre.
-   */
-  @EventPattern('ia.gre_a_gre.scored')
-  handleIaGreAGreScored(@Payload() data: IaGreAGreScoredPayload): void {
-    this.logger.log(
-      `🎧 REÇU ia.gre_a_gre.scored — GAG: ${data.gagId} | Score: ${data.scoreConformite} | Recommandation: ${data.recommandation}`,
-    );
-
-    // TODO Phase 6 : Implémenter le stockage du score IA
-    // await this.appelOffresService.saveIaScore(data.gagId, data.scoreConformite, data.recommandation);
-
-    this.logger.log(`✅ Score IA enregistré pour la demande GAG ${data.gagId}`);
   }
 }

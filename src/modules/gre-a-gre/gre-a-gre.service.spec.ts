@@ -59,6 +59,9 @@ const mockPrismaService = {
     create: jest.fn(),
     update: jest.fn(),
   },
+  evaluationIaGreAGre: {
+    create: jest.fn(),
+  },
   $transaction: jest.fn(),
 };
 
@@ -346,6 +349,56 @@ describe('GreAGreService', () => {
           evaluationIaId: 'eval-ia-001',
         }),
       });
+    });
+  });
+
+  // ─── recordIaScore() ────────────────────────────────────────────────────
+  describe('recordIaScore()', () => {
+    const mockIaScore = {
+      gagId: MOCK_DEMANDE_ID,
+      modeleIa: 'gpt-4',
+      scoreConformite: 85,
+      recommandation: 'ACCEPTER' as any,
+      justificationIa: 'Dossier conforme',
+      confianceScore: 90,
+    };
+
+    it('devrait enregistrer le score IA et mettre à jour le statut en EN_ANALYSE_IA', async () => {
+      mockPrismaService.demandeGreAGre.findUnique.mockResolvedValue(mockDemande);
+      mockPrismaService.evaluationIaGreAGre.create.mockResolvedValue({ id: 'eval-1', ...mockIaScore });
+
+      const result = await service.recordIaScore(mockIaScore);
+
+      expect(mockPrismaService.evaluationIaGreAGre.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          demandeId: MOCK_DEMANDE_ID,
+          modeleIa: 'gpt-4',
+          scoreConformite: 85,
+          recommandation: 'ACCEPTER',
+        })
+      });
+
+      expect(mockPrismaService.demandeGreAGre.update).toHaveBeenCalledWith({
+        where: { id: MOCK_DEMANDE_ID },
+        data: { statut: 'EN_ANALYSE_IA' }
+      });
+
+      expect(result.id).toBe('eval-1');
+    });
+
+    it('devrait lever NotFoundException si la demande n existe pas', async () => {
+      mockPrismaService.demandeGreAGre.findUnique.mockResolvedValue(null);
+
+      await expect(service.recordIaScore(mockIaScore)).rejects.toThrow(NotFoundException);
+    });
+
+    it('devrait lever BadRequestException si la demande est déjà clôturée', async () => {
+      mockPrismaService.demandeGreAGre.findUnique.mockResolvedValue({
+        ...mockDemande,
+        statut: 'ACCEPTEE'
+      });
+
+      await expect(service.recordIaScore(mockIaScore)).rejects.toThrow(BadRequestException);
     });
   });
 });
