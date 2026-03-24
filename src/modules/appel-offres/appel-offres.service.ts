@@ -254,13 +254,13 @@ export class AppelOffresService {
     // (Dans un cluster Docker, le nom du service "document-service" est résolu par DNS)
     let presignedUrl = '';
     try {
-      const response = await firstValueFrom(
+      const response = await firstValueFrom<{ data: { url: string } }>(
         this.httpService.get(
           `${this.documentServiceUrl}/api/documents/${document.documentId}/download`,
         ),
       );
-      presignedUrl = response.data.url;
-    } catch (error) {
+      presignedUrl = String(response.data.url);
+    } catch (_error) {
       throw new ConflictException(
         "Erreur lors de la communication avec le Document Service pour récupérer l'URL du fichier.",
       );

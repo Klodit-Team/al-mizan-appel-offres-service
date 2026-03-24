@@ -1,7 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AppelOffresController } from './appel-offres.controller';
 import { AppelOffresService } from './appel-offres.service';
-import { BadRequestException } from '@nestjs/common';
 import { Request } from 'express';
 
 const MOCK_OPERATEUR_ID = 'operateur-jwt-sub-uuid';
