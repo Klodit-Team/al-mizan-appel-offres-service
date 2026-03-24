@@ -373,14 +373,13 @@ Client / API Gateway
     - **Vérification d'unicité (409 Conflict)** : `MarcheService` empêche la création d'un Marché dont la `referenceMarche` ou l'`attributionId` est déjà utilisé par un autre Marché existant.
     - **Extraction JWT via `@Req()`** : Les endpoints nécessitant une identité utilisateur (`getCdcDownloadUrl`, `validate` gré-à-gré) lisent désormais `req.user?.sub` depuis le token JWT décodé par Passport, au lieu d'un ID simulé en dur.
 
-11. **Workflow Dérogatoire Gré-à-Gré (Phase 6 PARTIELLE — US 11 & US 13 livrées)** :
+11. **Workflow Dérogatoire Gré-à-Gré (Phase 6 VALIDÉE — US 11, US 12 & US 13 livrées)** :
     - **US 11 — Soumission** (`POST /appels-offres/:id/gre-a-gre/soumettre`) : Vérification que l'AO est de type `GRE_A_GRE`, prévention des doublons, création en bloc des `JustificationGreAGre` avec enum `TypeJustificationGreAGre`, et émission de l'événement `ao.gre_a_gre.submitted` vers RabbitMQ pour déclencher l'analyse IA.
+    - **US 12 — Analyse IA** : Le `GreAGreConsumer` écoute silencieusement `ia.gre_a_gre.scored` depuis RabbitMQ. Il enregistre l'audit IA via `recordIaScore()` dans `EvaluationIaGreAGre` (score conformité, niveau de confiance, justification OCR) et pousse le statut à `EN_ANALYSE_IA`.
     - **US 13 — Décision du Contrôleur** (`PATCH /appels-offres/gre-a-gre/:id/valider`) : Extraction sécurisée de l'identité du contrôleur depuis le payload JWT (`req.user.sub`), logique transactionnelle `$transaction` atomique créant l'audit `DecisionGreAGre` (avec corrélation IA `correspondIa`), mise à jour du statut de la demande (`ACCEPTEE`/`REJETEE`), mise à jour de l'AO parent (`EN_COURS`/`ANNULE`), et émission de l'événement `ao.gre_a_gre.validated` vers RabbitMQ.
-    - **US 12 (IA) — En attente** : La réception de l'événement `ia.gre_a_gre.scored` est déclarée dans `RecoursConsumer` ; le stockage du score dans `EvaluationIaGreAGre` reste à implémenter.
 
 ### Prochaines étapes :
 
-- **US 12 (Analyse IA)** : Compléter le handler `ia.gre_a_gre.scored` dans le consumer pour stocker le score de conformité IA et la recommandation dans la table `EvaluationIaGreAGre` (stub présent dans `RecoursConsumer`).
 - **Phase 7** : Sécurité Tolérance Zéro avec le système Role-Based Access Control (`@Roles(...)` + `RolesGuard` + validation JWT hors-ligne via `JwtService`).
 
 ### 📊 Suivi du Backlog Fonctionnel (15 User Stories)
@@ -398,12 +397,12 @@ Client / API Gateway
 |  ✅  | 9   | **Prononcer l'attribution définitive** (après expiration recours)              | SC           | 🔴 Haute   |
 |  ✅  | 10  | **Créer la fiche marché** (formalisation contractuelle)                        | SC           | 🟡 Moyenne |
 |  ✅  | 11  | **Soumettre une demande gré-à-gré** (justifications + pièces obligatoires)     | SC           | 🟡 Moyenne |
-|  ⬜  | 12  | **Analyse IA d'une demande gré-à-gré** (score de conformité + recommandation)  | Système / IA | 🟡 Moyenne |
+|  ✅  | 12  | **Analyse IA d'une demande gré-à-gré** (score de conformité + recommandation)  | Système / IA | 🟡 Moyenne |
 |  ✅  | 13  | **Valider / rejeter une demande gré-à-gré** (comparaison recommandation IA)    | Contrôleur   | 🟡 Moyenne |
 |  ✅  | 14  | **Consulter les AO publiés** (filtres : type, wilaya, secteur — pagination)    | OE           | 🔴 Haute   |
 |  ✅  | 15  | **Retirer le CDC** (téléchargement avec traçabilité + URL présignée)           | OE           | 🔴 Haute   |
 
-> **Progression : 14 / 15 User Stories livrées** (Phases 1, 2, 3, 4, 5, 5.5 complètes + Phase 6 partielle — US 11 & US 13)
+> **Progression : 15 / 15 User Stories livrées** (Phases 1 à 6 entièrement terminées)
 
 ### 🧪 Couverture des Tests Unitaires (Jest)
 
@@ -419,7 +418,7 @@ La suite de tests a été exécutée avec succès (`127 tests passed` sur `18 Te
 | **AvisAo** | `Controller` & `Service` | Endpoints CRUD | Vérification type `AO_OUVERT`, `findAoOrFail`, `findAvisAoOrFail`, injection module Prisma isolée. |
 | **Attribution** | `Controller` & `Service` | Endpoints CRUD | Validation croisée lot/AO, `findAttributionOrFail`, `BadRequestException` si lot n'appartient pas à l'AO. |
 | **Marche** | `Controller` & `Service` | Endpoints CRUD | Validation croisée attribution/AO, `ConflictException` sur doublon `referenceMarche` ou `attributionId`. |
-| **Gré-à-Gré** | `Controller` & `Service` | `submit`, `validate` | Vérification type `GRE_A_GRE`, anti-doublon demande, émission événements RabbitMQ, transaction `$transaction`, extraction `controleurId` depuis JWT (`req.user.sub`), fallback `anonymous`, corrélation IA (`correspondIa`). |
+| **Gré-à-Gré** | `Controller`, `Service` & `Consumer` | `submit`, `recordIaScore`, `validate` | Vérification type `GRE_A_GRE`, anti-doublon demande, émission et consommation d'événements RabbitMQ (`ia.gre_a_gre.scored`), transaction automatique pour l'IA, extraction `controleurId` depuis JWT (`req.user.sub`), fallback `anonymous`, corrélation automatique de la décision IA vs Humain (`correspondIa`). |
 
 ---
 
