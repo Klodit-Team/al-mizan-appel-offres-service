@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call */
 import { Test, TestingModule } from '@nestjs/testing';
 import { CriteresEligibiliteService } from './criteres-eligibilite.service';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -50,7 +50,7 @@ describe('CriteresEligibiliteService', () => {
         service.create('ao-id', {
           libelle: 'test',
           type: TypeCritereEligibilite.EXPERIENCE,
-          valeurMinimale: null,
+          valeurMinimale: '10',
         }),
       ).rejects.toThrow(NotFoundException);
     });
@@ -64,7 +64,7 @@ describe('CriteresEligibiliteService', () => {
         service.create('ao-id', {
           libelle: 'test',
           type: TypeCritereEligibilite.EXPERIENCE,
-          valeurMinimale: null,
+          valeurMinimale: '10',
         }),
       ).rejects.toThrow(ConflictException);
     });
@@ -78,7 +78,7 @@ describe('CriteresEligibiliteService', () => {
       const result = await service.create('ao-id', {
         libelle: 'test',
         type: TypeCritereEligibilite.EXPERIENCE,
-        valeurMinimale: null,
+        valeurMinimale: '10',
       });
 
       expect(prisma.critereEligibilite.create).toHaveBeenCalledWith({

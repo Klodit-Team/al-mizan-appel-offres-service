@@ -4,22 +4,31 @@ import {
   BadRequestException,
   ConflictException,
 } from '@nestjs/common';
-import * as crypto from 'crypto';
+import { ConfigService } from '@nestjs/config';
 import { CreateAppelOffreDto } from './dto/create-appel-offre.dto';
 import { UpdateAppelOffreDto } from './dto/update-appel-offre.dto';
 import { FindAllAppelOffresDto } from './dto/find-all-appel-offre.dto';
+import { HttpService } from '@nestjs/axios';
+import { firstValueFrom } from 'rxjs';
 import { PrismaService } from '../../prisma/prisma.service';
-import { StorageService } from '../../storage/storage.service';
 import { StatutAO } from '@prisma/client';
 import { AoEventsPublisher } from '../../messaging/publishers/ao-events.publisher';
 
 @Injectable()
 export class AppelOffresService {
+  private readonly documentServiceUrl: string;
+
   constructor(
     private readonly prisma: PrismaService,
-    private readonly storage: StorageService,
+    private readonly httpService: HttpService,
     private readonly publisher: AoEventsPublisher,
-  ) {}
+    private readonly configService: ConfigService,
+  ) {
+    this.documentServiceUrl = this.configService.get<string>(
+      'DOCUMENT_SERVICE_URL',
+      'http://al-mizan-document-service:8005',
+    );
+  }
 
   // --------------------------------------------------------------------------
   // CRUD DE BASE
@@ -193,13 +202,12 @@ export class AppelOffresService {
   // --------------------------------------------------------------------------
 
   /**
-   * Upload un Cahier des Charges (CDC) pour l'AO correspondant.
-   * L'AO doit être au statut BROUILLON.
+   * Lier un Cahier des Charges (CDC) pour l'AO correspondant.
+   * Le fichier a déjà été uploadé dans le Document Service et on reçoit son documentId.
    */
   async uploadCdc(
     aoId: string,
-    fileBuffer: Buffer,
-    mimetype: string,
+    documentId: string,
     prixRetrait: number = 0,
   ) {
     // 1. Vérification Métier
@@ -211,29 +219,11 @@ export class AppelOffresService {
       );
     }
 
-    // 2. Hachage SHA-256 du fichier
-    const hashSha256 = crypto
-      .createHash('sha256')
-      .update(fileBuffer)
-      .digest('hex');
-
-    // 3. Upload MinIO
-    const bucketName = 'cdc-documents';
-    const key = `AO-${aoId}-${Date.now()}.pdf`;
-
-    const urlS3 = await this.storage.uploadFile(
-      bucketName,
-      key,
-      fileBuffer,
-      mimetype,
-    );
-
-    // 4. Enregistrement Prisma dans DocumentCdc
+    // 2. Enregistrement Prisma dans DocumentCdc (lien)
     return this.prisma.documentCdc.create({
       data: {
         aoId,
-        fichierUrl: urlS3,
-        hashSha256,
+        documentId,
         prixRetrait,
         publieAt: new Date(),
       },
@@ -241,8 +231,8 @@ export class AppelOffresService {
   }
 
   /**
-   * Retourne une URL sécurisée (valide 15 minutes) pour télécharger le CDC,
-   * et enregistre ce retrait dans la base de données.
+   * Demande au Document Service une URL sécurisée (valide 15 minutes) pour télécharger le CDC,
+   * et enregistre ce retrait dans la base de données de l'Appel d'Offres.
    */
   async getPresignedDownloadUrl(aoId: string, operateurId: string) {
     // 1. Vérification de l'AO
@@ -260,18 +250,23 @@ export class AppelOffresService {
       );
     }
 
-    // 3. Extraire le nom du fichier (key) depuis l'URI interne (s3://bucket/key)
-    const urlParts = document.fichierUrl.replace('s3://', '').split('/');
-    const bucketName = urlParts[0];
-    const key = urlParts.slice(1).join('/');
+    // 3. Obtenir l'URL de téléchargement depuis le Document Service via HTTP
+    // (Dans un cluster Docker, le nom du service "document-service" est résolu par DNS)
+    let presignedUrl = '';
+    try {
+      const response = await firstValueFrom(
+        this.httpService.get(
+          `${this.documentServiceUrl}/api/documents/${document.documentId}/download`,
+        ),
+      );
+      presignedUrl = response.data.url;
+    } catch (error) {
+      throw new ConflictException(
+        "Erreur lors de la communication avec le Document Service pour récupérer l'URL du fichier.",
+      );
+    }
 
-    // 4. Obtenir l'URL de téléchargement signée (AWS SDK getSignedUrl)
-    const presignedUrl = await this.storage.getPresignedDownloadUrl(
-      bucketName,
-      key,
-    );
-
-    // 5. Traçabilité : Enregistrer que l'Opérateur a retiré le CDC
+    // 4. Traçabilité : Enregistrer que l'Opérateur a retiré le CDC
     await this.prisma.retraitCdc.create({
       data: {
         documentCdcId: document.id,
@@ -279,6 +274,6 @@ export class AppelOffresService {
       },
     });
 
-    return { downloadUrl: presignedUrl };
+    return { downloadUrl: presignedUrl, documentId: document.documentId };
   }
 }

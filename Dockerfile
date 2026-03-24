@@ -1,5 +1,5 @@
 # Stage 1: Build
-FROM node:20-alpine AS builder
+FROM node:18-alpine AS builder
 
 WORKDIR /usr/src/app
 
@@ -10,7 +10,7 @@ COPY . .
 RUN npx prisma generate && npm run build
 
 # Stage 2: Production
-FROM node:20-alpine
+FROM node:18-alpine
 
 WORKDIR /usr/src/app
 

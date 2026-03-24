@@ -45,34 +45,17 @@ describe('AppelOffresController', () => {
   });
 
   describe('uploadCdc', () => {
-    it('doit lever une erreur si le fichier est manquant', async () => {
-      await expect(
-        controller.uploadCdc(
-          'ao-id',
-          { prixRetrait: 0, fichier: null },
-          null as unknown as Express.Multer.File,
-        ),
-      ).rejects.toThrow(BadRequestException);
-    });
-
-    it('doit appeler le service uploadCdc avec les bons paramètres', async () => {
-      const mockFile = {
-        buffer: Buffer.from('test pdf'),
-        mimetype: 'application/pdf',
-      } as unknown as Express.Multer.File;
-
+    it('doit appeler le service uploadCdc avec documentId et prix', async () => {
       mockAppelOffresService.uploadCdc.mockResolvedValueOnce({ id: 'doc-123' });
 
-      const result = await controller.uploadCdc(
-        'ao-id',
-        { prixRetrait: 250, fichier: mockFile },
-        mockFile,
-      );
+      const result = await controller.uploadCdc('ao-id', {
+        documentId: 'ext-uuid-1234',
+        prixRetrait: 250,
+      });
 
       expect(mockAppelOffresService.uploadCdc).toHaveBeenCalledWith(
         'ao-id',
-        mockFile.buffer,
-        mockFile.mimetype,
+        'ext-uuid-1234',
         250,
       );
       expect(result).toEqual({ id: 'doc-123' });

@@ -57,7 +57,7 @@ describe('GreAGreController', () => {
         {
           type_justification: TypeJustificationGreAGre.ECONOMIQUE,
           description: 'Test de raison économique',
-          fichierUrl: 'http://minio.example.com/file.pdf',
+          documentId: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
         },
       ],
     };

@@ -59,7 +59,7 @@ export class GreAGreService {
             ordre: index + 1,
             typeJustification: j.type_justification,
             description: j.description,
-            fichierUrl: j.fichierUrl,
+            documentId: j.documentId,
           })),
         },
       },

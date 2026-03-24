@@ -6,14 +6,10 @@ import {
   Patch,
   Param,
   Delete,
-  UseInterceptors,
-  UploadedFile,
-  BadRequestException,
   Query,
   Req,
 } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
-import { ApiConsumes, ApiOperation } from '@nestjs/swagger';
+import { ApiOperation } from '@nestjs/swagger';
 import { AppelOffresService } from './appel-offres.service';
 import { CreateAppelOffreDto } from './dto/create-appel-offre.dto';
 import { UpdateAppelOffreDto } from './dto/update-appel-offre.dto';
@@ -70,27 +66,18 @@ export class AppelOffresController {
   // --------------------------------------------------------------------------
 
   @Post(':id/cdc')
-  @ApiOperation({ summary: 'Uploader le Cahier des Charges (CDC) sur MinIO' })
-  @ApiConsumes('multipart/form-data')
-  @UseInterceptors(FileInterceptor('fichier'))
+  @ApiOperation({ summary: 'Lier un Cahier des Charges (CDC) pré-uploadé' })
   async uploadCdc(
     @Param('id') id: string,
     @Body() uploadCdcDto: UploadCdcDto,
-    @UploadedFile() fichier: Express.Multer.File,
   ) {
-    if (!fichier) {
-      throw new BadRequestException('Aucun fichier fourni.');
-    }
-
-    // Le prix retrait est envoyé sous forme de string via form-data, on le convertit en nombre
     const prixRetrait = uploadCdcDto.prixRetrait
       ? Number(uploadCdcDto.prixRetrait)
       : 0;
 
     return this.appelOffresService.uploadCdc(
       id,
-      fichier.buffer,
-      fichier.mimetype,
+      uploadCdcDto.documentId,
       prixRetrait,
     );
   }

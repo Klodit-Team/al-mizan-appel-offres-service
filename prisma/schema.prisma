@@ -161,8 +161,7 @@ model CritereEvaluation {
 model DocumentCdc {
   id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   aoId        String   @map("ao_id") @db.Uuid
-  fichierUrl  String   @map("fichier_url")
-  hashSha256  String   @map("hash_sha256")
+  documentId  String   @map("document_id") @db.Uuid
   prixRetrait Decimal  @map("prix_retrait") @db.Decimal(15, 2)
   publieAt    DateTime @map("publie_at")
 
@@ -250,7 +249,7 @@ model JustificationGreAGre {
   demandeId         String                   @map("demande_id") @db.Uuid
   typeJustification TypeJustificationGreAGre @map("type_justification")
   description       String                   @db.Text
-  fichierUrl        String?                  @map("fichier_url") @db.VarChar(500)
+  documentId        String?                  @map("document_id") @db.Uuid
   ordre             Int
   createdAt         DateTime                 @default(now()) @map("created_at")
 

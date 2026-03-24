@@ -1,16 +1,18 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call */
 import { Test, TestingModule } from '@nestjs/testing';
 import { AppelOffresService } from './appel-offres.service';
 import { PrismaService } from '../../prisma/prisma.service';
-import { StorageService } from '../../storage/storage.service';
+import { HttpService } from '@nestjs/axios';
+import { ConfigService } from '@nestjs/config';
 import { AoEventsPublisher } from '../../messaging/publishers/ao-events.publisher';
 import { ConflictException, NotFoundException } from '@nestjs/common';
 import { StatutAO } from '@prisma/client';
+import { of } from 'rxjs';
 
 describe('AppelOffresService', () => {
   let service: AppelOffresService;
   let prisma: any;
-  let storage: any;
+  let http: any;
 
   const mockPrismaService = {
     appelOffres: {
@@ -29,12 +31,17 @@ describe('AppelOffresService', () => {
     },
   };
 
-  const mockStorageService = {
-    uploadFile: jest.fn(),
-    getPresignedDownloadUrl: jest.fn(),
+  const mockHttpService = {
+    get: jest.fn(),
   };
 
-  // Mock du publisher — toutes les méthodes sont des no-ops dans les tests unitaires
+  const mockConfigService = {
+    get: jest.fn((key: string, defaultVal?: string) => {
+      if (key === 'DOCUMENT_SERVICE_URL') return 'http://al-mizan-document-service:8005';
+      return defaultVal;
+    }),
+  };
+
   const mockAoEventsPublisher = {
     publishAoCreated: jest.fn(),
     publishAoPublished: jest.fn(),
@@ -52,14 +59,15 @@ describe('AppelOffresService', () => {
       providers: [
         AppelOffresService,
         { provide: PrismaService, useValue: mockPrismaService },
-        { provide: StorageService, useValue: mockStorageService },
+        { provide: HttpService, useValue: mockHttpService },
         { provide: AoEventsPublisher, useValue: mockAoEventsPublisher },
+        { provide: ConfigService, useValue: mockConfigService },
       ],
     }).compile();
 
     service = module.get<AppelOffresService>(AppelOffresService);
     prisma = module.get<PrismaService>(PrismaService);
-    storage = module.get<StorageService>(StorageService);
+    http = module.get<HttpService>(HttpService);
   });
 
   it('should be defined', () => {
@@ -72,36 +80,31 @@ describe('AppelOffresService', () => {
         statut: StatutAO.PUBLIE,
       });
 
-      const fileBuffer = Buffer.from('test pdf');
       await expect(
-        service.uploadCdc('ao-id', fileBuffer, 'application/pdf', 0),
+        service.uploadCdc('ao-id', 'doc-123', 0),
       ).rejects.toThrow(ConflictException);
     });
 
-    it('doit uploader sur S3 et créer un document dans Prisma', async () => {
+    it('doit lier le document dans Prisma', async () => {
       prisma.appelOffres.findUnique.mockResolvedValueOnce({
         statut: StatutAO.BROUILLON,
       });
-      storage.uploadFile.mockResolvedValueOnce('s3://cdc-documents/AO-123.pdf');
-      prisma.documentCdc.create.mockResolvedValueOnce({ id: 'doc-123' });
+      prisma.documentCdc.create.mockResolvedValueOnce({ id: 'cdc-123' });
 
-      const fileBuffer = Buffer.from('test pdf');
       const result = await service.uploadCdc(
         'ao-id',
-        fileBuffer,
-        'application/pdf',
+        'doc-uuid',
         500,
       );
 
-      expect(storage.uploadFile).toHaveBeenCalledTimes(1);
       expect(prisma.documentCdc.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
           aoId: 'ao-id',
-          fichierUrl: 's3://cdc-documents/AO-123.pdf',
+          documentId: 'doc-uuid',
           prixRetrait: 500,
         }),
       });
-      expect(result).toEqual({ id: 'doc-123' });
+      expect(result).toEqual({ id: 'cdc-123' });
     });
   });
 
@@ -115,32 +118,33 @@ describe('AppelOffresService', () => {
       ).rejects.toThrow(NotFoundException);
     });
 
-    it("doit générer une URL, tracer le retrait et retourner l'URL", async () => {
+    it("doit récupérer l'URL depuis Document Service, tracer le retrait et retourner l'URL", async () => {
       prisma.appelOffres.findUnique.mockResolvedValueOnce({ id: 'ao-id' });
       prisma.documentCdc.findFirst.mockResolvedValueOnce({
-        id: 'doc-id',
-        fichierUrl: 's3://cdc-documents/my-file.pdf',
+        id: 'cdc-id',
+        documentId: 'doc-id',
       });
-      storage.getPresignedDownloadUrl.mockResolvedValueOnce(
-        'https://minio.local/download?sign',
+      http.get.mockReturnValueOnce(
+        of({ data: { url: 'https://minio.local/download?sign' } }),
       );
       prisma.retraitCdc.create.mockResolvedValueOnce({ id: 'retrait-1' });
 
       const result = await service.getPresignedDownloadUrl('ao-id', 'op-id');
 
-      expect(storage.getPresignedDownloadUrl).toHaveBeenCalledWith(
-        'cdc-documents',
-        'my-file.pdf',
+      expect(http.get).toHaveBeenCalledWith(
+        'http://al-mizan-document-service:8005/api/documents/doc-id/download',
       );
       expect(prisma.retraitCdc.create).toHaveBeenCalledWith({
         data: {
-          documentCdcId: 'doc-id',
+          documentCdcId: 'cdc-id',
           operateurId: 'op-id',
         },
       });
       expect(result).toEqual({
         downloadUrl: 'https://minio.local/download?sign',
+        documentId: 'doc-id',
       });
     });
   });
 });
+

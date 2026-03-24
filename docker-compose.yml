@@ -1,6 +1,42 @@
 services:
-  # PostgreSQL - Transactional DB for ao_db
-  postgres:
+  appel-offres-service:
+    build: .
+    container_name: al-mizan-appel-offres-service
+    ports:
+      - "8003:8003"
+    environment:
+      PORT: "8003"
+      NODE_ENV: production
+      # Base de données propre au service Appel d'Offres
+      DATABASE_URL: postgresql://ao_user:secret@appel-offres-postgres:5432/ao_db?schema=public
+      DB_HOST: appel-offres-postgres
+      DB_PORT: "5432"
+      DB_NAME: ao_db
+      DB_USER: ao_user
+      DB_PASSWORD: secret
+
+      # Infrastructure partagée (via al-mizan-network)
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+
+      RABBITMQ_URL: "amqp://guest:guest@rabbitmq:5672"
+      RABBITMQ_EXCHANGE_AO: ao.events
+      RABBITMQ_QUEUE_AO: ao.queue
+
+      # Référence vers le Document Service (pour la récupération des URLs)
+      DOCUMENT_SERVICE_URL: "http://al-mizan-document-service:8005"
+
+      # API Gateway sécurité
+      API_GATEWAY_SECRET: shared_secret_for_header_validation
+    depends_on:
+      appel-offres-postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - al-mizan-network
+
+  # Base de données dédiée au service Appel d'Offres
+  appel-offres-postgres:
     image: postgres:15-alpine
     container_name: al-mizan-ao-postgres
     environment:
@@ -8,51 +44,22 @@ services:
       POSTGRES_PASSWORD: secret
       POSTGRES_DB: ao_db
     ports:
-      - '5432:5432'
+      - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - ao-postgres-data:/var/lib/postgresql/data
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U ao_user -d ao_db']
       interval: 10s
       timeout: 5s
       retries: 5
-
-  # Redis - Cache & Rate limiting
-  redis:
-    image: redis:7-alpine
-    container_name: al-mizan-ao-redis
-    ports:
-      - '6379:6379'
-    volumes:
-      - redis_data:/data
-    command: redis-server --appendonly yes
-
-  # MinIO - S3 Object Storage for CDC / PDF
-  minio:
-    image: minio/minio
-    container_name: al-mizan-ao-minio
-    ports:
-      - '9000:9000'
-      - '9001:9001'
-    environment:
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin
-    command: server /data --console-address ":9001"
-    volumes:
-      - minio_data:/data
-
-  # RabbitMQ - Async Messaging Bus
-  rabbitmq:
-    image: rabbitmq:3-management-alpine
-    container_name: al-mizan-ao-rabbitmq
-    ports:
-      - '5672:5672'
-      - '15672:15672'
-    volumes:
-      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - al-mizan-network
 
 volumes:
-  postgres_data:
-  redis_data:
-  minio_data:
-  rabbitmq_data:
+  ao-postgres-data:
+    name: al-mizan-ao-postgres-data
+
+networks:
+  al-mizan-network:
+    name: al-mizan-network
+    external: true

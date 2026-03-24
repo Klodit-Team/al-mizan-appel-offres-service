@@ -6,7 +6,7 @@ import {
   IsNotEmpty,
   IsOptional,
   IsString,
-  IsUrl,
+  IsUUID,
   ValidateNested,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
@@ -22,9 +22,9 @@ export class JustificationGreAGreDto {
   description: string;
 
   @ApiPropertyOptional()
-  @IsUrl({}, { message: 'Doit être une URL MinIO valide' })
+  @IsUUID('4', { message: 'Doit être un UUID valide (Document Service)' })
   @IsOptional()
-  fichierUrl?: string;
+  documentId?: string;
 }
 
 export class SubmitGreAGreDto {
