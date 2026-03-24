@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { SubmitGreAGreDto } from './dto/submit-gre-a-gre.dto';
 import { ValidateGreAGreDto } from './dto/validate-gre-a-gre.dto';
+import { ScoreIaGreAGreDto } from './dto/score-ia-gre-a-gre.dto';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AoEventsPublisher } from '../../messaging/publishers/ao-events.publisher';
 
@@ -162,5 +163,46 @@ export class GreAGreService {
     });
 
     return transactionResult;
+  }
+
+  // ─── US 12 : Enregistrement du score IA ──────────────────────────────────
+  async recordIaScore(dto: ScoreIaGreAGreDto) {
+    // 1. Vérifier que la demande existe
+    const demande = await this.prisma.demandeGreAGre.findUnique({
+      where: { id: dto.gagId },
+    });
+
+    if (!demande) {
+      throw new NotFoundException(
+        `Demande Gré-à-Gré "${dto.gagId}" introuvable. Impossible d'enregistrer le score IA.`,
+      );
+    }
+
+    if (demande.statut === 'ACCEPTEE' || demande.statut === 'REJETEE') {
+      throw new BadRequestException(
+        `Cette demande est déjà clôturée (${demande.statut}). Impossible d'enregistrer un score IA.`,
+      );
+    }
+
+    // 2. Créer l'entrée d'audit EvaluationIaGreAGre
+    const evaluation = await this.prisma.evaluationIaGreAGre.create({
+      data: {
+        demandeId: dto.gagId,
+        modeleIa: dto.modeleIa,
+        scoreConformite: dto.scoreConformite,
+        recommandation: dto.recommandation,
+        justificationIa: dto.justificationIa,
+        criteresAnalyses: {},
+        confianceScore: dto.confianceScore,
+      },
+    });
+
+    // 3. Mettre à jour le statut de la demande → EN_ANALYSE_IA
+    await this.prisma.demandeGreAGre.update({
+      where: { id: dto.gagId },
+      data: { statut: 'EN_ANALYSE_IA' },
+    });
+
+    return evaluation;
   }
 }
