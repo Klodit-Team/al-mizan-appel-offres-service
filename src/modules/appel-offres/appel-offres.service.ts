@@ -66,11 +66,10 @@ export class AppelOffresService {
     const skip = (page - 1) * limit;
 
     const where: import('@prisma/client').Prisma.AppelOffresWhereInput = {};
-    if (wilaya) where.wilaya = { contains: wilaya, mode: 'insensitive' };
+    if (wilaya) where.wilaya = { contains: wilaya };
     if (secteurActivite)
       where.secteurActivite = {
         contains: secteurActivite,
-        mode: 'insensitive',
       };
     if (typeProcedure) where.typeProcedure = typeProcedure;
     if (statut) where.statut = statut;

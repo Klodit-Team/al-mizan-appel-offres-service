@@ -18,7 +18,7 @@ import { UploadCdcDto } from './dto/upload-cdc.dto';
 import { FindAllAppelOffresDto } from './dto/find-all-appel-offre.dto';
 import { Request } from 'express';
 
-@Controller('appel-offres')
+@Controller('appels-offres')
 export class AppelOffresController {
   constructor(private readonly appelOffresService: AppelOffresService) {}
 
@@ -89,6 +89,18 @@ export class AppelOffresController {
   ) {
     // operateurId extrait du payload JWT (champ standard "sub")
     // TODO: Activer le Guard JWT (@UseGuards(JwtAuthGuard)) quand le module Auth sera branché
+    const operateurId = req.user?.sub ?? 'anonymous';
+    return this.appelOffresService.getPresignedDownloadUrl(id, operateurId);
+  }
+
+  @Get(':id/cdc')
+  @ApiOperation({
+    summary: 'Alias: obtenir un lien de téléchargement sécurisé du CDC',
+  })
+  async getCdcDownloadUrlAlias(
+    @Param('id') id: string,
+    @Req() req: Request & { user?: { sub: string } },
+  ) {
     const operateurId = req.user?.sub ?? 'anonymous';
     return this.appelOffresService.getPresignedDownloadUrl(id, operateurId);
   }

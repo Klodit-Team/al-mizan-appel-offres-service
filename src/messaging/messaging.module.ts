@@ -27,7 +27,7 @@ import { AoEventsPublisher } from './publishers/ao-events.publisher';
             urls: [
               configService.get<string>(
                 'RABBITMQ_URL',
-                'amqp://guest:guest@localhost:5672',
+                'amqp://guest:guest@localhost:5673',
               ),
             ],
             queue: configService.get<string>('RABBITMQ_QUEUE_AO', 'ao.queue'),

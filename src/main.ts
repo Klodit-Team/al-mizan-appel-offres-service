@@ -9,13 +9,15 @@ async function bootstrap() {
   // ─── Mode Hybride : HTTP + Microservice RabbitMQ ──────────────────────────
   const app = await NestFactory.create(AppModule);
   const logger = new Logger('AppelsOffres-Bootstrap');
+  const rabbitUrl = process.env.RABBITMQ_URL ?? 'amqp://guest:guest@localhost:5673';
+  const rabbitQueue = process.env.RABBITMQ_QUEUE_AO ?? 'ao.queue';
 
   // Connecter le consumer RabbitMQ (écoute les événements entrants)
   app.connectMicroservice<MicroserviceOptions>({
     transport: Transport.RMQ,
     options: {
-      urls: [process.env.RABBITMQ_URL ?? 'amqp://guest:guest@localhost:5672'],
-      queue: process.env.RABBITMQ_QUEUE_AO ?? 'ao.queue',
+      urls: [rabbitUrl],
+      queue: rabbitQueue,
       queueOptions: { durable: true },
       noAck: false, // Accusé de réception manuel pour garantir la livraison
     },
@@ -34,7 +36,7 @@ async function bootstrap() {
   );
 
   // Global API Prefix
-  app.setGlobalPrefix('api');
+  app.setGlobalPrefix('api/v1');
 
   // Swagger Documentation
   const config = new DocumentBuilder()
@@ -50,18 +52,27 @@ async function bootstrap() {
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api/docs', app, document);
+  SwaggerModule.setup('api/v1/docs', app, document);
 
-  // Démarrer le consumer RabbitMQ AVANT le serveur HTTP
-  await app.startAllMicroservices();
+  // Ne bloque pas le démarrage HTTP en dev si RabbitMQ est indisponible.
+  app
+    .startAllMicroservices()
+    .then(() => {
+      logger.log(`🐇 RabbitMQ Consumer actif sur la queue "${rabbitQueue}"`);
+    })
+    .catch((err) => {
+      logger.warn(
+        `RabbitMQ indisponible (${rabbitUrl}). Le service HTTP continue sans consumer.`,
+      );
+      logger.debug(String(err));
+    });
 
   // Démarrer le serveur HTTP
   const port = process.env.PORT ?? 8003;
   await app.listen(port);
 
-  logger.log(`🚀 HTTP Server: http://localhost:${port}/api`);
-  logger.log(`📚 Swagger: http://localhost:${port}/api/docs`);
-  logger.log(`🐇 RabbitMQ Consumer: écoute sur la queue "ao.queue"`);
+  logger.log(`🚀 HTTP Server: http://localhost:${port}/api/v1`);
+  logger.log(`📚 Swagger: http://localhost:${port}/api/v1/docs`);
 }
 
 bootstrap().catch((err) => {
