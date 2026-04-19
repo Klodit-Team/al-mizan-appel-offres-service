@@ -9,7 +9,7 @@ async function bootstrap() {
   // ─── Mode Hybride : HTTP + Microservice RabbitMQ ──────────────────────────
   const app = await NestFactory.create(AppModule);
   const logger = new Logger('AppelsOffres-Bootstrap');
-  const rabbitUrl = process.env.RABBITMQ_URL ?? 'amqp://guest:guest@localhost:5673';
+  const rabbitUrl = process.env.RABBITMQ_URL ?? 'amqp://guest:guest@localhost:5672';
   const rabbitQueue = process.env.RABBITMQ_QUEUE_AO ?? 'ao.queue';
 
   // Connecter le consumer RabbitMQ (écoute les événements entrants)

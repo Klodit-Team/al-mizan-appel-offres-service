@@ -26,7 +26,7 @@ export class AppelOffresService {
   ) {
     this.documentServiceUrl = this.configService.get<string>(
       'DOCUMENT_SERVICE_URL',
-      'http://al-mizan-document-service:8005',
+      'http://localhost:8005',
     );
   }
 

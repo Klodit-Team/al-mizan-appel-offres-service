@@ -38,7 +38,7 @@ describe('AppelOffresService', () => {
   const mockConfigService = {
     get: jest.fn((key: string, defaultVal?: string) => {
       if (key === 'DOCUMENT_SERVICE_URL')
-        return 'http://al-mizan-document-service:8005';
+        return 'http://localhost:8005';
       return defaultVal;
     }),
   };
@@ -129,7 +129,7 @@ describe('AppelOffresService', () => {
       const result = await service.getPresignedDownloadUrl('ao-id', 'op-id');
 
       expect(http.get).toHaveBeenCalledWith(
-        'http://al-mizan-document-service:8005/api/documents/doc-id/download',
+        'http://localhost:8005/api/documents/doc-id/download',
       );
       expect(prisma.retraitCdc.create).toHaveBeenCalledWith({
         data: {
