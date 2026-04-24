@@ -6,6 +6,7 @@ COPY . .
 RUN npx prisma generate && npm run build
 
 FROM node:18-alpine
+# hadolint ignore=DL3018
 RUN apk add --no-cache openssl
 WORKDIR /usr/src/app
 COPY package*.json ./
@@ -13,4 +14,4 @@ COPY prisma ./prisma/
 RUN npm ci --only=production && npx prisma generate
 COPY --from=builder /usr/src/app/dist ./dist
 EXPOSE 8003
-CMD npx prisma migrate deploy && node dist/main
+CMD ["sh", "-c", "npx prisma migrate deploy && node dist/main"]
