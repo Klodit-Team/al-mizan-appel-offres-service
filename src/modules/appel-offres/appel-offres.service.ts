@@ -52,7 +52,7 @@ export class AppelOffresService {
 
   async findAll(query?: FindAllAppelOffresDto) {
     if (!query) {
-      return this.prisma.appelOffres.findMany();
+      return this.prisma.appelOffres.findMany({ include: { lots: true } });
     }
 
     const {
@@ -74,12 +74,13 @@ export class AppelOffresService {
     if (typeProcedure) where.typeProcedure = typeProcedure;
     if (statut) where.statut = statut;
 
-    const [data, total] = await Promise.all([
+        const [data, total] = await Promise.all([
       this.prisma.appelOffres.findMany({
         where,
         skip,
         take: limit,
         orderBy: { createdAt: 'desc' },
+        include: { lots: true },
       }),
       this.prisma.appelOffres.count({ where }),
     ]);
