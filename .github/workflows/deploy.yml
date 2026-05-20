@@ -21,6 +21,6 @@ jobs:
             echo "🚀 Starting Deployment for appel-offres-service..."
             cd ~/appel-offres-service
             git pull
-            cd ~/al-mizan-deployment
-            sudo docker-compose up -d --build appel-offres-service
+            cd ~/al-mizan-deployments
+            docker compose up -d --build appel-offres-service
             echo "✅ Deployment Successful!"
