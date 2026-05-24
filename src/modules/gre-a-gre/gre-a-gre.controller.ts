@@ -4,6 +4,7 @@ import { SubmitGreAGreDto } from './dto/submit-gre-a-gre.dto';
 import { ValidateGreAGreDto } from './dto/validate-gre-a-gre.dto';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { Request } from 'express';
+import { DemandeGreAGre, ValidateGreAGreResponse } from './entities/demande-gre-a-gre.entity';
 
 @ApiTags('Exceptions - Procédure Gré-à-Gré')
 @Controller('appels-offres')
@@ -14,7 +15,7 @@ export class GreAGreController {
   @ApiOperation({
     summary: 'Soumettre une demande de Gré-à-Gré avec ses pièces (Étape 1)',
   })
-  submit(@Param('id') id: string, @Body() submitDto: SubmitGreAGreDto) {
+  submit(@Param('id') id: string, @Body() submitDto: SubmitGreAGreDto): Promise<DemandeGreAGre> {
     return this.greAGreService.submit(id, submitDto);
   }
 
@@ -26,9 +27,7 @@ export class GreAGreController {
     @Param('demandeId') demandeId: string,
     @Body() validateDto: ValidateGreAGreDto,
     @Req() req: Request & { user?: { sub: string } },
-  ) {
-    // controleurId extrait du payload JWT (champ standard "sub")
-    // TODO: Activer le Guard JWT (@UseGuards(JwtAuthGuard)) quand le module Auth sera branché
+  ): Promise<ValidateGreAGreResponse> {
     const controleurId = req.user?.sub ?? 'anonymous';
     return this.greAGreService.validate(demandeId, validateDto, controleurId);
   }

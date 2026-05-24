@@ -11,6 +11,7 @@ import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { AttributionService } from './attribution.service';
 import { CreateAttributionDto } from './dto/create-attribution.dto';
 import { UpdateAttributionDto } from './dto/update-attribution.dto';
+import { Attribution } from './entities/attribution.entity';
 
 @ApiTags('Attributions')
 @Controller('attributions')
@@ -21,19 +22,19 @@ export class AttributionController {
   @ApiOperation({
     summary: 'Prononcer une attribution (provisoire ou définitive)',
   })
-  create(@Body() createAttributionDto: CreateAttributionDto) {
+  create(@Body() createAttributionDto: CreateAttributionDto): Promise<Attribution> {
     return this.attributionService.create(createAttributionDto);
   }
 
   @Get()
   @ApiOperation({ summary: 'Lister les attributions' })
-  findAll() {
+  findAll(): Promise<Attribution[]> {
     return this.attributionService.findAll();
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Consulter une attribution' })
-  findOne(@Param('id') id: string) {
+  findOne(@Param('id') id: string): Promise<Attribution> {
     return this.attributionService.findOne(id);
   }
 
@@ -42,13 +43,13 @@ export class AttributionController {
   update(
     @Param('id') id: string,
     @Body() updateAttributionDto: UpdateAttributionDto,
-  ) {
+  ): Promise<Attribution> {
     return this.attributionService.update(id, updateAttributionDto);
   }
 
   @Delete(':id')
   @ApiOperation({ summary: 'Annuler/Supprimer une attribution' })
-  remove(@Param('id') id: string) {
+  remove(@Param('id') id: string): Promise<Attribution> {
     return this.attributionService.remove(id);
   }
 }
