@@ -12,6 +12,7 @@ import { MessagingModule } from './messaging/messaging.module';
 import { AvisAoModule } from './modules/avis-ao/avis-ao.module';
 import { AttributionModule } from './modules/attribution/attribution.module';
 import { MarcheModule } from './modules/marche/marche.module';
+import { GreAGreModule } from './modules/gre-a-gre/gre-a-gre.module';
 
 @Module({
   imports: [
@@ -51,6 +52,7 @@ import { MarcheModule } from './modules/marche/marche.module';
     AttributionModule,
 
     MarcheModule,
+    GreAGreModule,
   ],
   controllers: [],
   providers: [],
