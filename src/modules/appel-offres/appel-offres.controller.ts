@@ -1,15 +1,5 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Patch,
-  Param,
-  Delete,
-  Query,
-  Req,
-} from '@nestjs/common';
-import { ApiOperation } from '@nestjs/swagger';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Req } from '@nestjs/common';
+import { ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { AppelOffresService } from './appel-offres.service';
 import { CreateAppelOffreDto } from './dto/create-appel-offre.dto';
 import { UpdateAppelOffreDto } from './dto/update-appel-offre.dto';
@@ -24,7 +14,8 @@ export class AppelOffresController {
   constructor(private readonly appelOffresService: AppelOffresService) {}
 
   @Post()
-  create(@Body() createAppelOffreDto: CreateAppelOffreDto): Promise<AppelOffre> {
+  @ApiResponse({ status: 201, type: AppelOffre })
+  create(@Body() createAppelOffreDto: CreateAppelOffreDto) {
     return this.appelOffresService.create(createAppelOffreDto);
   }
 
@@ -33,32 +24,36 @@ export class AppelOffresController {
     summary: "Lister les Appels d'Offres avec filtres et pagination",
   })
   findAll(@Query() query: FindAllAppelOffresDto) {
-    return this.appelOffresService.findAll(query); // We leave this as is because it returns a custom paginated object
+    return this.appelOffresService.findAll(query);
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string): Promise<AppelOffre> {
+  @ApiResponse({ status: 200, type: AppelOffre })
+  findOne(@Param('id') id: string) {
     return this.appelOffresService.findOne(id);
   }
 
   @Patch(':id')
+  @ApiResponse({ status: 200, type: AppelOffre })
   update(
     @Param('id') id: string,
     @Body() updateAppelOffreDto: UpdateAppelOffreDto,
-  ): Promise<AppelOffre> {
+  ) {
     return this.appelOffresService.update(id, updateAppelOffreDto);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string): Promise<AppelOffre> {
+  @ApiResponse({ status: 200, type: AppelOffre })
+  remove(@Param('id') id: string) {
     return this.appelOffresService.remove(id);
   }
 
   @Patch(':id/statut')
+  @ApiResponse({ status: 200, type: AppelOffre })
   updateStatut(
     @Param('id') id: string,
     @Body() updateStatutDto: UpdateStatutDto,
-  ): Promise<AppelOffre> {
+  ) {
     return this.appelOffresService.updateStatut(id, updateStatutDto.statut);
   }
 
@@ -69,39 +64,20 @@ export class AppelOffresController {
   @Post(':id/cdc')
   @ApiOperation({ summary: 'Lier un Cahier des Charges (CDC) pré-uploadé' })
   async uploadCdc(@Param('id') id: string, @Body() uploadCdcDto: UploadCdcDto) {
-    const prixRetrait = uploadCdcDto.prixRetrait
-      ? Number(uploadCdcDto.prixRetrait)
-      : 0;
-
-    return this.appelOffresService.uploadCdc(
-      id,
-      uploadCdcDto.documentId,
-      prixRetrait,
-    );
+    const prixRetrait = uploadCdcDto.prixRetrait ? Number(uploadCdcDto.prixRetrait) : 0;
+    return this.appelOffresService.uploadCdc(id, uploadCdcDto.documentId, prixRetrait);
   }
 
   @Get(':id/cdc/download')
-  @ApiOperation({
-    summary: 'Obtenir un lien de téléchargement sécurisé du CDC',
-  })
-  async getCdcDownloadUrl(
-    @Param('id') id: string,
-    @Req() req: Request & { user?: { sub: string } },
-  ) {
-    // operateurId extrait du payload JWT (champ standard "sub")
-    // TODO: Activer le Guard JWT (@UseGuards(JwtAuthGuard)) quand le module Auth sera branché
+  @ApiOperation({ summary: 'Obtenir un lien de téléchargement sécurisé du CDC' })
+  async getCdcDownloadUrl(@Param('id') id: string, @Req() req: Request & { user?: { sub: string } }) {
     const operateurId = req.user?.sub ?? 'anonymous';
     return this.appelOffresService.getPresignedDownloadUrl(id, operateurId);
   }
 
   @Get(':id/cdc')
-  @ApiOperation({
-    summary: 'Alias: obtenir un lien de téléchargement sécurisé du CDC',
-  })
-  async getCdcDownloadUrlAlias(
-    @Param('id') id: string,
-    @Req() req: Request & { user?: { sub: string } },
-  ) {
+  @ApiOperation({ summary: 'Alias: obtenir un lien de téléchargement sécurisé du CDC' })
+  async getCdcDownloadUrlAlias(@Param('id') id: string, @Req() req: Request & { user?: { sub: string } }) {
     const operateurId = req.user?.sub ?? 'anonymous';
     return this.appelOffresService.getPresignedDownloadUrl(id, operateurId);
   }

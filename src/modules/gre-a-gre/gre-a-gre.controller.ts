@@ -2,7 +2,7 @@ import { Controller, Post, Body, Param, Patch, Req } from '@nestjs/common';
 import { GreAGreService } from './gre-a-gre.service';
 import { SubmitGreAGreDto } from './dto/submit-gre-a-gre.dto';
 import { ValidateGreAGreDto } from './dto/validate-gre-a-gre.dto';
-import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { Request } from 'express';
 import { DemandeGreAGre, ValidateGreAGreResponse } from './entities/demande-gre-a-gre.entity';
 
@@ -15,7 +15,8 @@ export class GreAGreController {
   @ApiOperation({
     summary: 'Soumettre une demande de Gré-à-Gré avec ses pièces (Étape 1)',
   })
-  submit(@Param('id') id: string, @Body() submitDto: SubmitGreAGreDto): Promise<DemandeGreAGre> {
+  @ApiResponse({ status: 201, type: DemandeGreAGre })
+  submit(@Param('id') id: string, @Body() submitDto: SubmitGreAGreDto) {
     return this.greAGreService.submit(id, submitDto);
   }
 
@@ -23,11 +24,12 @@ export class GreAGreController {
   @ApiOperation({
     summary: 'Enregistrer la décision du Contrôleur Humain (Étape 3)',
   })
+  @ApiResponse({ status: 200, type: ValidateGreAGreResponse })
   validate(
     @Param('demandeId') demandeId: string,
     @Body() validateDto: ValidateGreAGreDto,
     @Req() req: Request & { user?: { sub: string } },
-  ): Promise<ValidateGreAGreResponse> {
+  ) {
     const controleurId = req.user?.sub ?? 'anonymous';
     return this.greAGreService.validate(demandeId, validateDto, controleurId);
   }
