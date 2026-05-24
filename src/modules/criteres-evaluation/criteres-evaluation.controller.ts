@@ -12,6 +12,7 @@ import { ApiTags, ApiOperation, ApiParam } from '@nestjs/swagger';
 import { CriteresEvaluationService } from './criteres-evaluation.service';
 import { CreateCriteresEvaluationDto } from './dto/create-criteres-evaluation.dto';
 import { UpdateCriteresEvaluationDto } from './dto/update-criteres-evaluation.dto';
+import { CriteresEvaluation } from './entities/criteres-evaluation.entity';
 
 @ApiTags('Criteres Evaluation')
 @Controller('appels-offres/:aoId/criteres-evaluation')
@@ -32,7 +33,7 @@ export class CriteresEvaluationController {
   create(
     @Param('aoId', ParseUUIDPipe) aoId: string,
     @Body() createCriteresEvaluationDto: CreateCriteresEvaluationDto,
-  ) {
+  ): Promise<CriteresEvaluation> {
     return this.criteresEvaluationService.create(
       aoId,
       createCriteresEvaluationDto,
@@ -48,7 +49,7 @@ export class CriteresEvaluationController {
     description: "UUID de l'Appel d'Offres",
     type: String,
   })
-  findAll(@Param('aoId', ParseUUIDPipe) aoId: string) {
+  findAll(@Param('aoId', ParseUUIDPipe) aoId: string): Promise<CriteresEvaluation[]> {
     return this.criteresEvaluationService.findAll(aoId);
   }
 
@@ -67,7 +68,7 @@ export class CriteresEvaluationController {
   findOne(
     @Param('aoId', ParseUUIDPipe) aoId: string,
     @Param('id', ParseUUIDPipe) id: string,
-  ) {
+  ): Promise<CriteresEvaluation> {
     return this.criteresEvaluationService.findOne(aoId, id);
   }
 
@@ -87,7 +88,7 @@ export class CriteresEvaluationController {
     @Param('aoId', ParseUUIDPipe) aoId: string,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateCriteresEvaluationDto: UpdateCriteresEvaluationDto,
-  ) {
+  ): Promise<CriteresEvaluation> {
     return this.criteresEvaluationService.update(
       aoId,
       id,
@@ -110,7 +111,7 @@ export class CriteresEvaluationController {
   remove(
     @Param('aoId', ParseUUIDPipe) aoId: string,
     @Param('id', ParseUUIDPipe) id: string,
-  ) {
+  ): Promise<CriteresEvaluation> {
     return this.criteresEvaluationService.remove(aoId, id);
   }
 }

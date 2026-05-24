@@ -12,6 +12,7 @@ import { ApiTags, ApiOperation, ApiParam } from '@nestjs/swagger';
 import { CriteresEligibiliteService } from './criteres-eligibilite.service';
 import { CreateCriteresEligibiliteDto } from './dto/create-criteres-eligibilite.dto';
 import { UpdateCriteresEligibiliteDto } from './dto/update-criteres-eligibilite.dto';
+import { CriteresEligibilite } from './entities/criteres-eligibilite.entity';
 
 @ApiTags('Criteres Eligibilite')
 @Controller('appels-offres/:aoId/criteres-eligibilite')
@@ -32,7 +33,7 @@ export class CriteresEligibiliteController {
   create(
     @Param('aoId', ParseUUIDPipe) aoId: string,
     @Body() createCriteresEligibiliteDto: CreateCriteresEligibiliteDto,
-  ) {
+  ): Promise<CriteresEligibilite> {
     return this.criteresEligibiliteService.create(
       aoId,
       createCriteresEligibiliteDto,
@@ -48,7 +49,7 @@ export class CriteresEligibiliteController {
     description: "UUID de l'Appel d'Offres",
     type: String,
   })
-  findAll(@Param('aoId', ParseUUIDPipe) aoId: string) {
+  findAll(@Param('aoId', ParseUUIDPipe) aoId: string): Promise<CriteresEligibilite[]> {
     return this.criteresEligibiliteService.findAll(aoId);
   }
 
@@ -63,7 +64,7 @@ export class CriteresEligibiliteController {
   findOne(
     @Param('aoId', ParseUUIDPipe) aoId: string,
     @Param('id', ParseUUIDPipe) id: string,
-  ) {
+  ): Promise<CriteresEligibilite> {
     return this.criteresEligibiliteService.findOne(aoId, id);
   }
 
@@ -79,7 +80,7 @@ export class CriteresEligibiliteController {
     @Param('aoId', ParseUUIDPipe) aoId: string,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateCriteresEligibiliteDto: UpdateCriteresEligibiliteDto,
-  ) {
+  ): Promise<CriteresEligibilite> {
     return this.criteresEligibiliteService.update(
       aoId,
       id,
@@ -98,7 +99,7 @@ export class CriteresEligibiliteController {
   remove(
     @Param('aoId', ParseUUIDPipe) aoId: string,
     @Param('id', ParseUUIDPipe) id: string,
-  ) {
+  ): Promise<CriteresEligibilite> {
     return this.criteresEligibiliteService.remove(aoId, id);
   }
 }

@@ -9,6 +9,7 @@ import {
 import { ApiTags, ApiOperation, ApiParam } from '@nestjs/swagger';
 import { LotsService } from './lots.service';
 import { CreateLotDto } from './dto/create-lot.dto';
+import { Lot } from './entities/lot.entity';
 
 @ApiTags('Lots')
 @Controller('appels-offres/:aoId/lots')
@@ -30,14 +31,10 @@ export class LotsController {
   create(
     @Param('aoId', ParseUUIDPipe) aoId: string,
     @Body() createLotDto: CreateLotDto,
-  ) {
+  ): Promise<Lot> {
     return this.lotsService.create(aoId, createLotDto);
   }
 
-  /**
-   * GET /api/appels-offres/:aoId/lots
-   * Récupère tous les lots d'un Appel d'Offres.
-   */
   @Get()
   @ApiOperation({ summary: "Lister tous les lots d'un Appel d'Offres" })
   @ApiParam({
@@ -45,7 +42,7 @@ export class LotsController {
     description: "UUID de l'Appel d'Offres",
     type: String,
   })
-  findAll(@Param('aoId', ParseUUIDPipe) aoId: string) {
+  findAll(@Param('aoId', ParseUUIDPipe) aoId: string): Promise<Lot[]> {
     return this.lotsService.findAll(aoId);
   }
 }

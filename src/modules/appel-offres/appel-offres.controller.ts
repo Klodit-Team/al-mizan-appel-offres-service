@@ -17,13 +17,14 @@ import { UpdateStatutDto } from './dto/update-statut.dto';
 import { UploadCdcDto } from './dto/upload-cdc.dto';
 import { FindAllAppelOffresDto } from './dto/find-all-appel-offre.dto';
 import { Request } from 'express';
+import { AppelOffre } from './entities/appel-offre.entity';
 
 @Controller('appels-offres')
 export class AppelOffresController {
   constructor(private readonly appelOffresService: AppelOffresService) {}
 
   @Post()
-  create(@Body() createAppelOffreDto: CreateAppelOffreDto) {
+  create(@Body() createAppelOffreDto: CreateAppelOffreDto): Promise<AppelOffre> {
     return this.appelOffresService.create(createAppelOffreDto);
   }
 
@@ -32,11 +33,11 @@ export class AppelOffresController {
     summary: "Lister les Appels d'Offres avec filtres et pagination",
   })
   findAll(@Query() query: FindAllAppelOffresDto) {
-    return this.appelOffresService.findAll(query);
+    return this.appelOffresService.findAll(query); // We leave this as is because it returns a custom paginated object
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
+  findOne(@Param('id') id: string): Promise<AppelOffre> {
     return this.appelOffresService.findOne(id);
   }
 
@@ -44,12 +45,12 @@ export class AppelOffresController {
   update(
     @Param('id') id: string,
     @Body() updateAppelOffreDto: UpdateAppelOffreDto,
-  ) {
+  ): Promise<AppelOffre> {
     return this.appelOffresService.update(id, updateAppelOffreDto);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
+  remove(@Param('id') id: string): Promise<AppelOffre> {
     return this.appelOffresService.remove(id);
   }
 
@@ -57,7 +58,7 @@ export class AppelOffresController {
   updateStatut(
     @Param('id') id: string,
     @Body() updateStatutDto: UpdateStatutDto,
-  ) {
+  ): Promise<AppelOffre> {
     return this.appelOffresService.updateStatut(id, updateStatutDto.statut);
   }
 
