@@ -1,4 +1,12 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { AttributionService } from './attribution.service';
 import { CreateAttributionDto } from './dto/create-attribution.dto';
@@ -11,7 +19,9 @@ export class AttributionController {
   constructor(private readonly attributionService: AttributionService) {}
 
   @Post()
-  @ApiOperation({ summary: 'Prononcer une attribution (provisoire ou définitive)' })
+  @ApiOperation({
+    summary: 'Prononcer une attribution (provisoire ou définitive)',
+  })
   @ApiResponse({ status: 201, type: Attribution })
   create(@Body() createAttributionDto: CreateAttributionDto) {
     return this.attributionService.create(createAttributionDto);
@@ -34,7 +44,10 @@ export class AttributionController {
   @Patch(':id')
   @ApiOperation({ summary: 'Modifier une attribution' })
   @ApiResponse({ status: 200, type: Attribution })
-  update(@Param('id') id: string, @Body() updateAttributionDto: UpdateAttributionDto) {
+  update(
+    @Param('id') id: string,
+    @Body() updateAttributionDto: UpdateAttributionDto,
+  ) {
     return this.attributionService.update(id, updateAttributionDto);
   }
 

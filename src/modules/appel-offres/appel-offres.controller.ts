@@ -1,4 +1,14 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Req } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  Query,
+  Req,
+} from '@nestjs/common';
 import { ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { AppelOffresService } from './appel-offres.service';
 import { CreateAppelOffreDto } from './dto/create-appel-offre.dto';
@@ -64,20 +74,36 @@ export class AppelOffresController {
   @Post(':id/cdc')
   @ApiOperation({ summary: 'Lier un Cahier des Charges (CDC) pré-uploadé' })
   async uploadCdc(@Param('id') id: string, @Body() uploadCdcDto: UploadCdcDto) {
-    const prixRetrait = uploadCdcDto.prixRetrait ? Number(uploadCdcDto.prixRetrait) : 0;
-    return this.appelOffresService.uploadCdc(id, uploadCdcDto.documentId, prixRetrait);
+    const prixRetrait = uploadCdcDto.prixRetrait
+      ? Number(uploadCdcDto.prixRetrait)
+      : 0;
+    return this.appelOffresService.uploadCdc(
+      id,
+      uploadCdcDto.documentId,
+      prixRetrait,
+    );
   }
 
   @Get(':id/cdc/download')
-  @ApiOperation({ summary: 'Obtenir un lien de téléchargement sécurisé du CDC' })
-  async getCdcDownloadUrl(@Param('id') id: string, @Req() req: Request & { user?: { sub: string } }) {
+  @ApiOperation({
+    summary: 'Obtenir un lien de téléchargement sécurisé du CDC',
+  })
+  async getCdcDownloadUrl(
+    @Param('id') id: string,
+    @Req() req: Request & { user?: { sub: string } },
+  ) {
     const operateurId = req.user?.sub ?? 'anonymous';
     return this.appelOffresService.getPresignedDownloadUrl(id, operateurId);
   }
 
   @Get(':id/cdc')
-  @ApiOperation({ summary: 'Alias: obtenir un lien de téléchargement sécurisé du CDC' })
-  async getCdcDownloadUrlAlias(@Param('id') id: string, @Req() req: Request & { user?: { sub: string } }) {
+  @ApiOperation({
+    summary: 'Alias: obtenir un lien de téléchargement sécurisé du CDC',
+  })
+  async getCdcDownloadUrlAlias(
+    @Param('id') id: string,
+    @Req() req: Request & { user?: { sub: string } },
+  ) {
     const operateurId = req.user?.sub ?? 'anonymous';
     return this.appelOffresService.getPresignedDownloadUrl(id, operateurId);
   }
