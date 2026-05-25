@@ -37,8 +37,7 @@ describe('AppelOffresService', () => {
 
   const mockConfigService = {
     get: jest.fn((key: string, defaultVal?: string) => {
-      if (key === 'DOCUMENT_SERVICE_URL')
-        return 'http://localhost:8005';
+      if (key === 'DOCUMENT_SERVICE_URL') return 'http://localhost:8005';
       return defaultVal;
     }),
   };

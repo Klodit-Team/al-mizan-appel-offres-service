@@ -6,7 +6,8 @@ export class CriteresEvaluation {
   @ApiProperty() aoId: string;
   @ApiPropertyOptional() lotId: string | null;
   @ApiProperty() libelle: string;
-  @ApiProperty({ enum: CategorieCritereEvaluation }) categorie: CategorieCritereEvaluation;
+  @ApiProperty({ enum: CategorieCritereEvaluation })
+  categorie: CategorieCritereEvaluation;
   @ApiProperty() poids: number;
   @ApiPropertyOptional() noteEliminatoire: number | null;
 }

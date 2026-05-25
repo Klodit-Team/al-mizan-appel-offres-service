@@ -74,7 +74,7 @@ export class AppelOffresService {
     if (typeProcedure) where.typeProcedure = typeProcedure;
     if (statut) where.statut = statut;
 
-        const [data, total] = await Promise.all([
+    const [data, total] = await Promise.all([
       this.prisma.appelOffres.findMany({
         where,
         skip,

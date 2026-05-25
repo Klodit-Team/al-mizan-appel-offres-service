@@ -8,7 +8,7 @@ import {
   Delete,
   ParseUUIDPipe,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiParam } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiParam, ApiResponse } from '@nestjs/swagger';
 import { CriteresEvaluationService } from './criteres-evaluation.service';
 import { CreateCriteresEvaluationDto } from './dto/create-criteres-evaluation.dto';
 import { UpdateCriteresEvaluationDto } from './dto/update-criteres-evaluation.dto';
@@ -24,11 +24,23 @@ export class CriteresEvaluationController {
   @Post()
   @ApiOperation({
     summary: "Ajouter un critère d'évaluation à un Appel d'Offres",
+    description:
+      "Permet de définir un critère d'évaluation technique ou financier pour un Appel d'Offres spécifique.",
   })
   @ApiParam({
     name: 'aoId',
     description: "UUID de l'Appel d'Offres",
     type: String,
+  })
+  @ApiResponse({
+    status: 201,
+    description: "Le critère d'évaluation a été ajouté avec succès.",
+    type: CriteresEvaluation,
+  })
+  @ApiResponse({ status: 400, description: "Données d'entrée invalides." })
+  @ApiResponse({
+    status: 404,
+    description: "L'Appel d'Offres est introuvable.",
   })
   create(
     @Param('aoId', ParseUUIDPipe) aoId: string,
@@ -43,11 +55,18 @@ export class CriteresEvaluationController {
   @Get()
   @ApiOperation({
     summary: "Lister tous les critères d'évaluation d'un Appel d'Offres",
+    description:
+      "Permet de lister tous les critères définis pour un Appel d'Offres.",
   })
   @ApiParam({
     name: 'aoId',
     description: "UUID de l'Appel d'Offres",
     type: String,
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Liste des critères d'évaluation récupérée.",
+    type: [CriteresEvaluation],
   })
   findAll(
     @Param('aoId', ParseUUIDPipe) aoId: string,
@@ -56,7 +75,11 @@ export class CriteresEvaluationController {
   }
 
   @Get(':id')
-  @ApiOperation({ summary: "Obtenir un critère d'évaluation par son ID" })
+  @ApiOperation({
+    summary: "Obtenir un critère d'évaluation par son ID",
+    description:
+      "Permet d'obtenir les détails d'un critère d'évaluation spécifique.",
+  })
   @ApiParam({
     name: 'aoId',
     description: "UUID de l'Appel d'Offres",
@@ -66,6 +89,15 @@ export class CriteresEvaluationController {
     name: 'id',
     description: "UUID du critère d'évaluation",
     type: String,
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Détails du critère d'évaluation récupérés.",
+    type: CriteresEvaluation,
+  })
+  @ApiResponse({
+    status: 404,
+    description: "Critère d'évaluation introuvable.",
   })
   findOne(
     @Param('aoId', ParseUUIDPipe) aoId: string,
@@ -75,7 +107,11 @@ export class CriteresEvaluationController {
   }
 
   @Patch(':id')
-  @ApiOperation({ summary: "Mettre à jour un critère d'évaluation" })
+  @ApiOperation({
+    summary: "Mettre à jour un critère d'évaluation",
+    description:
+      "Permet de modifier les coefficients, pondérations ou informations d'un critère.",
+  })
   @ApiParam({
     name: 'aoId',
     description: "UUID de l'Appel d'Offres",
@@ -85,6 +121,15 @@ export class CriteresEvaluationController {
     name: 'id',
     description: "UUID du critère d'évaluation",
     type: String,
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Le critère d'évaluation a été mis à jour avec succès.",
+    type: CriteresEvaluation,
+  })
+  @ApiResponse({
+    status: 404,
+    description: "Critère d'évaluation introuvable.",
   })
   update(
     @Param('aoId', ParseUUIDPipe) aoId: string,
@@ -99,7 +144,10 @@ export class CriteresEvaluationController {
   }
 
   @Delete(':id')
-  @ApiOperation({ summary: "Supprimer un critère d'évaluation" })
+  @ApiOperation({
+    summary: "Supprimer un critère d'évaluation",
+    description: "Permet de supprimer définitivement un critère d'évaluation.",
+  })
   @ApiParam({
     name: 'aoId',
     description: "UUID de l'Appel d'Offres",
@@ -109,6 +157,15 @@ export class CriteresEvaluationController {
     name: 'id',
     description: "UUID du critère d'évaluation",
     type: String,
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Le critère d'évaluation a été supprimé avec succès.",
+    type: CriteresEvaluation,
+  })
+  @ApiResponse({
+    status: 404,
+    description: "Critère d'évaluation introuvable.",
   })
   remove(
     @Param('aoId', ParseUUIDPipe) aoId: string,
