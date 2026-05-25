@@ -4,7 +4,10 @@ import { SubmitGreAGreDto } from './dto/submit-gre-a-gre.dto';
 import { ValidateGreAGreDto } from './dto/validate-gre-a-gre.dto';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { Request } from 'express';
-import { DemandeGreAGre, ValidateGreAGreResponse } from './entities/demande-gre-a-gre.entity';
+import {
+  DemandeGreAGre,
+  ValidateGreAGreResponse,
+} from './entities/demande-gre-a-gre.entity';
 
 @ApiTags('Exceptions - Procédure Gré-à-Gré')
 @Controller('appels-offres')
