@@ -38,7 +38,10 @@ export class AvisAoController {
 
   @Patch(':id')
   @ApiOperation({ summary: 'Modifier un avis' })
-  update(@Param('id') id: string, @Body() updateAvisAoDto: UpdateAvisAoDto): Promise<AvisAo> {
+  update(
+    @Param('id') id: string,
+    @Body() updateAvisAoDto: UpdateAvisAoDto,
+  ): Promise<AvisAo> {
     return this.avisAoService.update(id, updateAvisAoDto);
   }
 
