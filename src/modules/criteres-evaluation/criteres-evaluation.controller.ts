@@ -49,7 +49,9 @@ export class CriteresEvaluationController {
     description: "UUID de l'Appel d'Offres",
     type: String,
   })
-  findAll(@Param('aoId', ParseUUIDPipe) aoId: string): Promise<CriteresEvaluation[]> {
+  findAll(
+    @Param('aoId', ParseUUIDPipe) aoId: string,
+  ): Promise<CriteresEvaluation[]> {
     return this.criteresEvaluationService.findAll(aoId);
   }
 
