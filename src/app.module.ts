@@ -14,6 +14,7 @@ import { AvisAoModule } from './modules/avis-ao/avis-ao.module';
 import { AttributionModule } from './modules/attribution/attribution.module';
 import { MarcheModule } from './modules/marche/marche.module';
 import { GreAGreModule } from './modules/gre-a-gre/gre-a-gre.module';
+import { ClarificationsModule } from './modules/clarifications/clarifications.module';
 
 @Module({
   imports: [
@@ -57,6 +58,7 @@ import { GreAGreModule } from './modules/gre-a-gre/gre-a-gre.module';
 
     MarcheModule,
     GreAGreModule,
+    ClarificationsModule,
   ],
   controllers: [],
   providers: [],

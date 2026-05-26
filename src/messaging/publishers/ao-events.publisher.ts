@@ -56,6 +56,14 @@ export interface AoGreAGreValidatedPayload {
   validatedAt: Date;
 }
 
+export interface AoClarificationReponduePayload {
+  aoId: string;
+  clarificationId: string;
+  question: string;
+  reponse: string;
+  reponduAt: Date;
+}
+
 // ─── Publisher ────────────────────────────────────────────────────────────────
 
 @Injectable()
@@ -144,5 +152,16 @@ export class AoEventsPublisher {
       `📢 EMIT ao.gre_a_gre.validated — GAG: ${payload.gagId} | AO: ${payload.aoId} | DECISION: ${payload.decision}`,
     );
     this.client.emit('ao.gre_a_gre.validated', payload);
+  }
+
+  /**
+   * Émis quand une réponse est apportée à une demande de clarification (Phase 5).
+   * Consommateurs : Notifications
+   */
+  publishClarificationRepondue(payload: AoClarificationReponduePayload): void {
+    this.logger.log(
+      `📢 EMIT ao.clarification.repondue — AO: ${payload.aoId} | Clarification: ${payload.clarificationId}`,
+    );
+    this.client.emit('ao.clarification.repondue', payload);
   }
 }
