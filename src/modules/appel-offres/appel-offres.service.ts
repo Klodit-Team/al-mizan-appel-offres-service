@@ -113,14 +113,26 @@ export class AppelOffresService {
     return ao;
   }
 
-  update(id: string, updateAppelOffreDto: UpdateAppelOffreDto) {
+  async update(id: string, updateAppelOffreDto: UpdateAppelOffreDto) {
+    const ao = await this.findOne(id);
+    if (ao.statut !== 'BROUILLON') {
+      throw new ConflictException(
+        "Impossible de modifier l'Appel d'Offres car il n'est plus en BROUILLON.",
+      );
+    }
     return this.prisma.appelOffres.update({
       where: { id },
       data: updateAppelOffreDto,
     });
   }
 
-  remove(id: string) {
+  async remove(id: string) {
+    const ao = await this.findOne(id);
+    if (ao.statut !== 'BROUILLON') {
+      throw new ConflictException(
+        "Impossible de supprimer l'Appel d'Offres car il n'est plus en BROUILLON.",
+      );
+    }
     return this.prisma.appelOffres.delete({ where: { id } });
   }
 
@@ -271,5 +283,45 @@ export class AppelOffresService {
     });
 
     return { downloadUrl: presignedUrl, documentId: document.documentId };
+  }
+
+  calculateProposedDates(typeProcedure: string, datePublicationStr?: string) {
+    const pubDate = datePublicationStr
+      ? new Date(datePublicationStr)
+      : new Date();
+    let daysToAdd = 21; // Simple par défaut (GRE_A_GRE)
+
+    if (typeProcedure === 'AO_RESTREINT') {
+      daysToAdd = 30; // Capacités minimales
+    } else if (typeProcedure === 'AO_OUVERT' || typeProcedure === 'CONCOURS') {
+      daysToAdd = 45; // AO Complexe / Grande envergure
+    }
+
+    const limitDate = new Date(pubDate);
+    limitDate.setDate(limitDate.getDate() + daysToAdd);
+
+    // date limite retrait cdc = 5 jours avant la date limite de soumission
+    const limitRetrait = new Date(limitDate);
+    limitRetrait.setDate(limitRetrait.getDate() - 5);
+
+    // Ouverture des plis : même jour que la limite, à 13h00
+    const ouverturePlis = new Date(limitDate);
+    ouverturePlis.setHours(13, 0, 0, 0);
+
+    // Si vendredi (5) ou samedi (6) -> reporter au dimanche suivant à 13h00
+    const day = ouverturePlis.getDay();
+    if (day === 5) {
+      // Vendredi
+      ouverturePlis.setDate(ouverturePlis.getDate() + 2); // Dimanche
+    } else if (day === 6) {
+      // Samedi
+      ouverturePlis.setDate(ouverturePlis.getDate() + 1); // Dimanche
+    }
+
+    return {
+      dateLimiteSoumission: limitDate.toISOString(),
+      dateLimiteRetraitCdc: limitRetrait.toISOString(),
+      dateOuverturePlis: ouverturePlis.toISOString(),
+    };
   }
 }

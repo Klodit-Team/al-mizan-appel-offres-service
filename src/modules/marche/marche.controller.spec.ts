@@ -22,6 +22,11 @@ describe('MarcheController', () => {
     findOne: jest.fn().mockResolvedValue(mockMarche),
     update: jest.fn().mockResolvedValue({ ...mockMarche, delaiExecution: 360 }),
     remove: jest.fn().mockResolvedValue(mockMarche),
+    getCloturedMarketsStats: jest.fn().mockResolvedValue({
+      totalMarkets: 2,
+      totalAmount: 3000000,
+      averageExecutionTime: 150,
+    }),
   };
 
   beforeEach(async () => {
@@ -93,6 +98,24 @@ describe('MarcheController', () => {
       const result = await controller.remove('test-id');
       expect(mockMarcheService.remove).toHaveBeenCalledWith('test-id');
       expect(result).toEqual(mockMarche);
+    });
+  });
+
+  describe('getCloturedStats', () => {
+    it('devrait retourner des statistiques de marché', async () => {
+      const result = await controller.getCloturedStats('sc-123');
+      expect(mockMarcheService.getCloturedMarketsStats).toHaveBeenCalledWith(
+        'sc-123',
+      );
+      expect(result).toEqual({
+        totalMarkets: 2,
+        totalAmount: 3000000,
+        averageExecutionTime: 150,
+      });
+    });
+
+    it('devrait lever BadRequestException si x-user-id est manquant', async () => {
+      await expect(controller.getCloturedStats('')).rejects.toThrow();
     });
   });
 });

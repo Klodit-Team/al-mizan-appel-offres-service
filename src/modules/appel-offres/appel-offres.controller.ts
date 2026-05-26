@@ -8,6 +8,7 @@ import {
   Delete,
   Query,
   Req,
+  HttpCode,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiParam, ApiResponse } from '@nestjs/swagger';
 import { AppelOffresService } from './appel-offres.service';
@@ -16,6 +17,7 @@ import { UpdateAppelOffreDto } from './dto/update-appel-offre.dto';
 import { UpdateStatutDto } from './dto/update-statut.dto';
 import { UploadCdcDto } from './dto/upload-cdc.dto';
 import { FindAllAppelOffresDto } from './dto/find-all-appel-offre.dto';
+import { CalculerDatesDto } from './dto/calculer-dates.dto';
 import { Request } from 'express';
 import { AppelOffre } from './entities/appel-offre.entity';
 
@@ -38,6 +40,25 @@ export class AppelOffresController {
   @ApiResponse({ status: 400, description: "Données d'entrée invalides." })
   create(@Body() createAppelOffreDto: CreateAppelOffreDto) {
     return this.appelOffresService.create(createAppelOffreDto);
+  }
+
+  @Post('calculer-dates')
+  @HttpCode(200)
+  @ApiOperation({
+    summary: 'Calculer les dates réglementaires par défaut',
+    description:
+      "Permet de proposer par défaut la date limite de soumission, la date de retrait CDC et la date d'ouverture des plis en fonction du type de procédure, avec report automatique du pli si c'est un week-end.",
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Dates calculées avec succès.',
+  })
+  @ApiResponse({ status: 400, description: "Données d'entrée invalides." })
+  calculerDates(@Body() dto: CalculerDatesDto) {
+    return this.appelOffresService.calculateProposedDates(
+      dto.typeProcedure,
+      dto.datePublication,
+    );
   }
 
   @Get()

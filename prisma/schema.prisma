@@ -103,14 +103,15 @@ model AppelOffres {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  lots                Lot[]
-  criteresEligibilite CritereEligibilite[]
-  criteresEvaluation  CritereEvaluation[]
-  documentsCdc        DocumentCdc[]
-  avisAo              AvisAo[]
-  attributions        Attribution[]
-  marches             Marche[]
-  demandeGreAGre      DemandeGreAGre?
+  lots                  Lot[]
+  criteresEligibilite   CritereEligibilite[]
+  criteresEvaluation    CritereEvaluation[]
+  documentsCdc          DocumentCdc[]
+  avisAo                AvisAo[]
+  attributions          Attribution[]
+  marches               Marche[]
+  demandeGreAGre        DemandeGreAGre?
+  demandesClarification DemandeClarification[]
 
   @@map("appel_offres")
 }
@@ -291,5 +292,21 @@ model DecisionGreAGre {
   evaluationIa EvaluationIaGreAGre? @relation(fields: [evaluationIaId], references: [id])
 
   @@map("decisions_gre_a_gre")
+}
+
+model DemandeClarification {
+  id            String       @id @default(uuid()) @db.Char(36)
+  aoId          String       @map("ao_id") @db.Char(36)
+  operateurId   String       @map("operateur_id") @db.Char(36)
+  question      String       @db.Text
+  reponse       String?      @db.Text
+  reponduAt     DateTime?    @map("repondu_at")
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @updatedAt @map("updated_at")
+
+  appelOffres   AppelOffres  @relation(fields: [aoId], references: [id], onDelete: Cascade)
+
+  @@index([aoId])
+  @@map("demandes_clarification")
 }
 
