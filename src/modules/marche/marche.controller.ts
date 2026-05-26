@@ -6,6 +6,8 @@ import {
   Patch,
   Param,
   Delete,
+  Headers,
+  BadRequestException,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { MarcheService } from './marche.service';
@@ -51,6 +53,27 @@ export class MarcheController {
   })
   findAll() {
     return this.marcheService.findAll();
+  }
+
+  @Get('statistiques')
+  @ApiOperation({
+    summary: 'Obtenir les statistiques des marchés clôturés',
+    description:
+      "Permet aux Services Contractants de visualiser le nombre global, les montants financiers cumulés et les délais cumulés pour l'ensemble des marchés au statut Clôturé.",
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Statistiques récupérées avec succès.',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Accès interdit.',
+  })
+  async getCloturedStats(@Headers('x-user-id') userId: string) {
+    if (!userId) {
+      throw new BadRequestException("L'en-tête x-user-id est requis.");
+    }
+    return this.marcheService.getCloturedMarketsStats(userId);
   }
 
   @Get(':id')

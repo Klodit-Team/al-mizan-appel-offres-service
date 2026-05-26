@@ -168,4 +168,36 @@ export class MarcheService {
       where: { id: existingMarche.id },
     });
   }
+
+  async getCloturedMarketsStats(serviceContractantId: string) {
+    const stats = await this.prisma.appelOffres.findMany({
+      where: {
+        serviceContractantId,
+        statut: 'CLOTURE',
+      },
+      include: {
+        marches: true,
+      },
+    });
+
+    const totalMarkets = stats.length;
+    const totalAmount = stats.reduce((sum, ao) => {
+      const amount = ao.marches[0]?.montantSigne
+        ? Number(ao.marches[0].montantSigne)
+        : 0;
+      return sum + amount;
+    }, 0);
+
+    const averageExecutionTime =
+      stats.reduce((sum, ao) => {
+        const time = ao.marches[0]?.delaiExecution ?? 0;
+        return sum + time;
+      }, 0) / (totalMarkets || 1);
+
+    return {
+      totalMarkets,
+      totalAmount,
+      averageExecutionTime: Math.round(averageExecutionTime),
+    };
+  }
 }
