@@ -142,4 +142,102 @@ describe('AppelOffresService', () => {
       });
     });
   });
+
+  describe('update', () => {
+    it('doit autoriser la modification si l AO est en BROUILLON', async () => {
+      const mockAo = { id: 'ao-id', statut: StatutAO.BROUILLON };
+      prisma.appelOffres.findUnique.mockResolvedValueOnce(mockAo);
+      prisma.appelOffres.update.mockResolvedValueOnce({
+        ...mockAo,
+        objet: 'Nouveau',
+      });
+
+      const result = await service.update('ao-id', { objet: 'Nouveau' });
+
+      expect(prisma.appelOffres.update).toHaveBeenCalledWith({
+        where: { id: 'ao-id' },
+        data: { objet: 'Nouveau' },
+      });
+      expect(result.objet).toBe('Nouveau');
+    });
+
+    it('doit lever une ConflictException si l AO n est plus en BROUILLON', async () => {
+      const mockAo = { id: 'ao-id', statut: StatutAO.PUBLIE };
+      prisma.appelOffres.findUnique.mockResolvedValueOnce(mockAo);
+
+      await expect(
+        service.update('ao-id', { objet: 'Nouveau' }),
+      ).rejects.toThrow(ConflictException);
+      expect(prisma.appelOffres.update).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('remove', () => {
+    it('doit autoriser la suppression si l AO est en BROUILLON', async () => {
+      const mockAo = { id: 'ao-id', statut: StatutAO.BROUILLON };
+      prisma.appelOffres.findUnique.mockResolvedValueOnce(mockAo);
+      prisma.appelOffres.delete.mockResolvedValueOnce(mockAo);
+
+      await service.remove('ao-id');
+
+      expect(prisma.appelOffres.delete).toHaveBeenCalledWith({
+        where: { id: 'ao-id' },
+      });
+    });
+
+    it('doit lever une ConflictException si l AO n est plus en BROUILLON', async () => {
+      const mockAo = { id: 'ao-id', statut: StatutAO.PUBLIE };
+      prisma.appelOffres.findUnique.mockResolvedValueOnce(mockAo);
+
+      await expect(service.remove('ao-id')).rejects.toThrow(ConflictException);
+      expect(prisma.appelOffres.delete).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('calculateProposedDates', () => {
+    it('doit calculer les dates pour une procédure simple (GRE_A_GRE) + 21 jours', () => {
+      // 2026-05-04 est un lundi. Lundi + 21 jours = 2026-05-25 (lundi)
+      const datePub = '2026-05-04T08:00:00.000Z';
+      const result = service.calculateProposedDates('GRE_A_GRE', datePub);
+
+      expect(result.dateLimiteSoumission).toContain('2026-05-25');
+      // Le pli d'ouverture tombe un lundi (jour de semaine), donc pas de décalage de weekend, mais calé à 13h00 local
+      expect(new Date(result.dateOuverturePlis).getHours()).toBe(13);
+      expect(result.dateOuverturePlis).toContain('2026-05-25');
+    });
+
+    it('doit calculer les dates pour capacités minimales (AO_RESTREINT) + 30 jours', () => {
+      // 2026-05-04 (lundi) + 30 jours = 2026-06-03 (mercredi)
+      const datePub = '2026-05-04T08:00:00.000Z';
+      const result = service.calculateProposedDates('AO_RESTREINT', datePub);
+
+      expect(result.dateLimiteSoumission).toContain('2026-06-03');
+      expect(new Date(result.dateOuverturePlis).getHours()).toBe(13);
+      expect(result.dateOuverturePlis).toContain('2026-06-03');
+    });
+
+    it('doit calculer les dates pour AO complexe (AO_OUVERT) + 45 jours et reporter le pli si c est le weekend', () => {
+      // 2026-05-05 (mardi) + 45 jours = 2026-06-19 (vendredi !).
+      const datePub = '2026-05-05T08:00:00.000Z';
+      const result = service.calculateProposedDates('AO_OUVERT', datePub);
+
+      // Limite : 19 juin 2026 (vendredi)
+      expect(result.dateLimiteSoumission).toContain('2026-06-19');
+      // Ouverture initiale : vendredi 19 juin. Doit être reportée au dimanche suivant (21 juin 2026) à 13h00 local !
+      expect(new Date(result.dateOuverturePlis).getHours()).toBe(13);
+      expect(result.dateOuverturePlis).toContain('2026-06-21');
+    });
+
+    it('doit reporter au dimanche si l ouverture initiale tombe un samedi', () => {
+      // Si date publication = 2026-05-06 (mercredi) + 45 jours = 2026-06-20 (samedi !)
+      const datePub = '2026-05-06T08:00:00.000Z';
+      const result = service.calculateProposedDates('AO_OUVERT', datePub);
+
+      // Limite : 20 juin 2026 (samedi)
+      expect(result.dateLimiteSoumission).toContain('2026-06-20');
+      // Ouverture initiale : samedi 20 juin. Doit être reportée au dimanche 21 juin 2026 à 13h00 local !
+      expect(new Date(result.dateOuverturePlis).getHours()).toBe(13);
+      expect(result.dateOuverturePlis).toContain('2026-06-21');
+    });
+  });
 });

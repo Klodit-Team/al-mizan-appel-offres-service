@@ -7,6 +7,7 @@ import { AppelOffresModule } from './modules/appel-offres/appel-offres.module';
 import { LotsModule } from './modules/lots/lots.module';
 import { CriteresEligibiliteModule } from './modules/criteres-eligibilite/criteres-eligibilite.module';
 import { CriteresEvaluationModule } from './modules/criteres-evaluation/criteres-evaluation.module';
+import { ScheduleModule } from '@nestjs/schedule';
 
 import { MessagingModule } from './messaging/messaging.module';
 import { AvisAoModule } from './modules/avis-ao/avis-ao.module';
@@ -16,6 +17,9 @@ import { GreAGreModule } from './modules/gre-a-gre/gre-a-gre.module';
 
 @Module({
   imports: [
+    // Planificateur de tâches Cron
+    ScheduleModule.forRoot(),
+
     // Configuration globale des variables d'environnement
     ConfigModule.forRoot({
       isGlobal: true,
