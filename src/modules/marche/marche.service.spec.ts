@@ -25,7 +25,7 @@ const mockMarche = {
 };
 
 const mockPrismaService = {
-  appelOffres: { findUnique: jest.fn() },
+  appelOffres: { findUnique: jest.fn(), findMany: jest.fn() },
   attribution: { findUnique: jest.fn() },
   marche: {
     create: jest.fn(),
@@ -191,6 +191,68 @@ describe('MarcheService', () => {
       await expect(service.remove('invalid')).rejects.toThrow(
         NotFoundException,
       );
+    });
+  });
+
+  // ─── getCloturedMarketsStats() ────────────────────────────────────────────
+  describe('getCloturedMarketsStats()', () => {
+    it('devrait retourner des statistiques correctes pour les marchés clôturés', async () => {
+      const mockStats = [
+        {
+          id: 'ao-1',
+          statut: 'CLOTURE',
+          marches: [
+            {
+              id: 'marche-1',
+              montantSigne: 1000000,
+              delaiExecution: 180,
+            },
+          ],
+        },
+        {
+          id: 'ao-2',
+          statut: 'CLOTURE',
+          marches: [
+            {
+              id: 'marche-2',
+              montantSigne: 2000000,
+              delaiExecution: 120,
+            },
+          ],
+        },
+      ];
+
+      mockPrismaService.appelOffres.findMany.mockResolvedValue(mockStats);
+
+      const result = await service.getCloturedMarketsStats('sc-123');
+
+      expect(mockPrismaService.appelOffres.findMany).toHaveBeenCalledWith({
+        where: {
+          serviceContractantId: 'sc-123',
+          statut: 'CLOTURE',
+        },
+        include: {
+          marches: true,
+        },
+      });
+
+      expect(result).toEqual({
+        totalMarkets: 2,
+        totalAmount: 3000000,
+        averageExecutionTime: 150, // (180 + 120) / 2
+      });
+    });
+
+    it("devrait retourner des valeurs à zéro si aucun marché clôturé n'existe", async () => {
+      mockPrismaService.appelOffres.findMany.mockResolvedValue([]);
+
+      const result = await service.getCloturedMarketsStats('sc-456');
+
+      expect(result).toEqual({
+        totalMarkets: 0,
+        totalAmount: 0,
+        averageExecutionTime: 0,
+      });
     });
   });
 });

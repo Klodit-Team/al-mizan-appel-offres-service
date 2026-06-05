@@ -7,15 +7,20 @@ import { AppelOffresModule } from './modules/appel-offres/appel-offres.module';
 import { LotsModule } from './modules/lots/lots.module';
 import { CriteresEligibiliteModule } from './modules/criteres-eligibilite/criteres-eligibilite.module';
 import { CriteresEvaluationModule } from './modules/criteres-evaluation/criteres-evaluation.module';
+import { ScheduleModule } from '@nestjs/schedule';
 
 import { MessagingModule } from './messaging/messaging.module';
 import { AvisAoModule } from './modules/avis-ao/avis-ao.module';
 import { AttributionModule } from './modules/attribution/attribution.module';
 import { MarcheModule } from './modules/marche/marche.module';
 import { GreAGreModule } from './modules/gre-a-gre/gre-a-gre.module';
+import { ClarificationsModule } from './modules/clarifications/clarifications.module';
 
 @Module({
   imports: [
+    // Planificateur de tâches Cron
+    ScheduleModule.forRoot(),
+
     // Configuration globale des variables d'environnement
     ConfigModule.forRoot({
       isGlobal: true,
@@ -53,6 +58,7 @@ import { GreAGreModule } from './modules/gre-a-gre/gre-a-gre.module';
 
     MarcheModule,
     GreAGreModule,
+    ClarificationsModule,
   ],
   controllers: [],
   providers: [],
