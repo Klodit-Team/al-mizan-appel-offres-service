@@ -64,6 +64,13 @@ export interface AoClarificationReponduePayload {
   reponduAt: Date;
 }
 
+export interface AiAoGreAGreSubmittedPayload {
+  aoId: string;
+  gagId: string;
+  userId: string;
+  justification: string;
+}
+
 // ─── Publisher ────────────────────────────────────────────────────────────────
 
 @Injectable()
@@ -163,5 +170,12 @@ export class AoEventsPublisher {
       `📢 EMIT ao.clarification.repondue — AO: ${payload.aoId} | Clarification: ${payload.clarificationId}`,
     );
     this.client.emit('ao.clarification.repondue', payload);
+  }
+
+  publishAiGreAGreSubmitted(payload: AiAoGreAGreSubmittedPayload): void {
+    this.logger.log(
+      `📢 EMIT ao.gre_a_gre.submitted (AI) — GAG: ${payload.gagId} | AO: ${payload.aoId}`,
+    );
+    this.client.emit('ao.gre_a_gre.submitted', payload);
   }
 }

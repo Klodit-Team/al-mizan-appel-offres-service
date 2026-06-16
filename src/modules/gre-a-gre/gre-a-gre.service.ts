@@ -78,6 +78,13 @@ export class GreAGreService {
       submittedAt: demande.createdAt,
     });
 
+    this.publisher.publishAiGreAGreSubmitted({
+      gagId: demande.id,
+      aoId: demande.aoId,
+      userId: demande.serviceContractantId,
+      justification: justificationText,
+    });
+
     return demande;
   }
 
