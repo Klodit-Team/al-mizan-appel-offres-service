@@ -80,7 +80,17 @@ export class AppelOffresService {
         skip,
         take: limit,
         orderBy: { createdAt: 'desc' },
-        include: { lots: true },
+        include: { 
+          lots: true,
+          demandeGreAGre: {
+            include: {
+              evaluationsIa: {
+                orderBy: { dateAnalyse: 'desc' },
+                take: 1,
+              },
+            },
+          },
+        },
       }),
       this.prisma.appelOffres.count({ where }),
     ]);
@@ -103,6 +113,19 @@ export class AppelOffresService {
         lots: true,
         criteresEligibilite: true,
         criteresEvaluation: true,
+        demandeGreAGre: {
+          include: {
+            evaluationsIa: {
+              orderBy: { dateAnalyse: 'desc' },
+              take: 1,
+            },
+            justifications: true,
+            decisions: {
+              orderBy: { dateDecision: 'desc' },
+              take: 1,
+            },
+          },
+        },
       },
     });
     if (!ao) {
