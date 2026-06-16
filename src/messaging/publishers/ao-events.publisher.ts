@@ -1,6 +1,7 @@
-import { Injectable, Inject, Logger } from '@nestjs/common';
+import { Injectable, Inject, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { StatutAO } from '@prisma/client';
+import * as amqp from 'amqplib';
 
 // ─── Interfaces des payloads ───────────────────────────────────────────────────
 // Typer les payloads élimine les erreurs silencieuses et documente le contrat.
@@ -44,6 +45,7 @@ export interface AoAnnulePayload {
 export interface AoGreAGreSubmittedPayload {
   gagId: string;
   aoId: string;
+  userId: string;
   justification: string;
   submittedAt: Date;
 }
@@ -64,22 +66,55 @@ export interface AoClarificationReponduePayload {
   reponduAt: Date;
 }
 
-export interface AiAoGreAGreSubmittedPayload {
-  aoId: string;
-  gagId: string;
-  userId: string;
-  justification: string;
-}
 
 // ─── Publisher ────────────────────────────────────────────────────────────────
 
 @Injectable()
-export class AoEventsPublisher {
+export class AoEventsPublisher implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(AoEventsPublisher.name);
+  private connection?: amqp.ChannelModel;
+  private channel?: amqp.Channel;
+  private readonly exchange = 'al-mizan.events';
 
   constructor(
     @Inject('RABBITMQ_EVENT_BUS') private readonly client: ClientProxy,
   ) {}
+
+  async onModuleInit() {
+    try {
+      const url = process.env.RABBITMQ_URL || 'amqp://guest:guest@localhost:5672';
+      this.connection = await amqp.connect(url);
+      this.channel = await this.connection.createChannel();
+      await this.channel.assertExchange(this.exchange, 'topic', { durable: true });
+      this.logger.log(`Raw AMQP publisher connected to exchange ${this.exchange}`);
+    } catch (err) {
+      this.logger.error('Failed to initialize raw AMQP publisher', (err as Error).message);
+    }
+  }
+
+  async onModuleDestroy() {
+    try {
+      await this.channel?.close();
+      await this.connection?.close();
+    } catch (err) {
+      this.logger.warn('Error while closing raw AMQP publisher connection');
+    }
+  }
+
+  private publishRaw(routingKey: string, payload: any) {
+    if (this.channel) {
+      try {
+        const buffer = Buffer.from(JSON.stringify(payload));
+        this.channel.publish(this.exchange, routingKey, buffer, {
+          persistent: true,
+          contentType: 'application/json',
+        });
+        this.logger.debug(`Raw published [${routingKey}] to exchange [${this.exchange}]`);
+      } catch (err) {
+        this.logger.error(`Failed to raw publish [${routingKey}]`, (err as Error).message);
+      }
+    }
+  }
 
   /**
    * Émis quand un nouvel Appel d'Offres est créé.
@@ -88,6 +123,7 @@ export class AoEventsPublisher {
   publishAoCreated(payload: AoCreatedPayload): void {
     this.logger.log(`📢 EMIT ao.created — AO: ${payload.aoId}`);
     this.client.emit('ao.created', payload);
+    this.publishRaw('ao.created', payload);
   }
 
   /**
@@ -97,6 +133,7 @@ export class AoEventsPublisher {
   publishAoPublished(payload: AoPublishedPayload): void {
     this.logger.log(`📢 EMIT ao.published — AO: ${payload.aoId}`);
     this.client.emit('ao.published', payload);
+    this.publishRaw('ao.published', payload);
   }
 
   /**
@@ -108,6 +145,7 @@ export class AoEventsPublisher {
       `📢 EMIT ao.status_changed — AO: ${payload.aoId} | ${payload.ancienStatut} → ${payload.nouveauStatut}`,
     );
     this.client.emit('ao.status_changed', payload);
+    this.publishRaw('ao.status_changed', payload);
   }
 
   /**
@@ -120,6 +158,7 @@ export class AoEventsPublisher {
       `📢 EMIT ao.attribution.provisoire — AO: ${payload.aoId} | Fin recours: ${payload.dateFinRecours.toISOString()}`,
     );
     this.client.emit('ao.attribution.provisoire', payload);
+    this.publishRaw('ao.attribution.provisoire', payload);
   }
 
   /**
@@ -129,6 +168,7 @@ export class AoEventsPublisher {
   publishAttributionDefinitive(payload: AoAttributionDefinitivePayload): void {
     this.logger.log(`📢 EMIT ao.attribution.definitive — AO: ${payload.aoId}`);
     this.client.emit('ao.attribution.definitive', payload);
+    this.publishRaw('ao.attribution.definitive', payload);
   }
 
   /**
@@ -138,6 +178,7 @@ export class AoEventsPublisher {
   publishAoAnnule(payload: AoAnnulePayload): void {
     this.logger.log(`📢 EMIT ao.annule — AO: ${payload.aoId}`);
     this.client.emit('ao.annule', payload);
+    this.publishRaw('ao.annule', payload);
   }
 
   /**
@@ -149,6 +190,7 @@ export class AoEventsPublisher {
       `📢 EMIT ao.gre_a_gre.submitted — GAG: ${payload.gagId} | AO: ${payload.aoId}`,
     );
     this.client.emit('ao.gre_a_gre.submitted', payload);
+    this.publishRaw('ao.gre_a_gre.submitted', payload);
   }
   /**
    * Émis quand une demande de gré-à-gré est validée (Approuvée / Rejetée) par le contrôleur (Phase 6).
@@ -159,6 +201,7 @@ export class AoEventsPublisher {
       `📢 EMIT ao.gre_a_gre.validated — GAG: ${payload.gagId} | AO: ${payload.aoId} | DECISION: ${payload.decision}`,
     );
     this.client.emit('ao.gre_a_gre.validated', payload);
+    this.publishRaw('ao.gre_a_gre.validated', payload);
   }
 
   /**
@@ -170,12 +213,7 @@ export class AoEventsPublisher {
       `📢 EMIT ao.clarification.repondue — AO: ${payload.aoId} | Clarification: ${payload.clarificationId}`,
     );
     this.client.emit('ao.clarification.repondue', payload);
+    this.publishRaw('ao.clarification.repondue', payload);
   }
 
-  publishAiGreAGreSubmitted(payload: AiAoGreAGreSubmittedPayload): void {
-    this.logger.log(
-      `📢 EMIT ao.gre_a_gre.submitted (AI) — GAG: ${payload.gagId} | AO: ${payload.aoId}`,
-    );
-    this.client.emit('ao.gre_a_gre.submitted', payload);
-  }
 }
