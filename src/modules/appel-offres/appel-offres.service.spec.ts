@@ -25,6 +25,7 @@ describe('AppelOffresService', () => {
     documentCdc: {
       create: jest.fn(),
       findFirst: jest.fn(),
+      findMany: jest.fn(),
     },
     retraitCdc: {
       create: jest.fn(),
@@ -238,6 +239,63 @@ describe('AppelOffresService', () => {
       // Ouverture initiale : samedi 20 juin. Doit être reportée au dimanche 21 juin 2026 à 13h00 local !
       expect(new Date(result.dateOuverturePlis).getHours()).toBe(13);
       expect(result.dateOuverturePlis).toContain('2026-06-21');
+    });
+  });
+
+  describe('getCdcWithMetadata', () => {
+    it('doit lever NotFoundException si l AO n existe pas', async () => {
+      prisma.appelOffres.findUnique.mockResolvedValueOnce(null);
+
+      await expect(service.getCdcWithMetadata('invalid-ao')).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+
+    it('doit retourner le CDC avec les metadonnees enrichies du document-service', async () => {
+      prisma.appelOffres.findUnique.mockResolvedValueOnce({
+        id: 'ao-id',
+        reference: 'AO-2026-01',
+        statut: StatutAO.PUBLIE,
+        dateLimiteRetraitCdc: new Date(),
+      });
+
+      prisma.documentCdc.findMany.mockResolvedValueOnce([
+        {
+          id: 'cdc-uuid',
+          documentId: 'doc-uuid',
+          prixRetrait: 500,
+          publieAt: new Date(),
+          retraitsCdc: [
+            { id: 'ret-1', operateurId: 'op-1', dateRetrait: new Date() },
+          ],
+        },
+      ]);
+
+      const mockMetadata = {
+        id: 'doc-uuid',
+        nom: 'cdc.pdf',
+        typeMime: 'application/pdf',
+        tailleOctets: 1024,
+      };
+
+      http.get.mockReturnValueOnce(of({ data: mockMetadata }));
+
+      const result = await service.getCdcWithMetadata('ao-id');
+
+      expect(prisma.appelOffres.findUnique).toHaveBeenCalledWith({
+        where: { id: 'ao-id' },
+        select: expect.any(Object),
+      });
+      expect(prisma.documentCdc.findMany).toHaveBeenCalledWith({
+        where: { aoId: 'ao-id' },
+        include: expect.any(Object),
+        orderBy: { publieAt: 'desc' },
+      });
+      expect(http.get).toHaveBeenCalledWith(
+        'http://localhost:8005/api/documents/doc-uuid',
+      );
+      expect(result.aoId).toBe('ao-id');
+      expect(result.documents[0].metadata).toEqual(mockMetadata);
     });
   });
 });

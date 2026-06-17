@@ -1,7 +1,17 @@
-import { Controller, Post, Body, Param, Patch, Req } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Param,
+  Patch,
+  Req,
+  Get,
+  Query,
+} from '@nestjs/common';
 import { GreAGreService } from './gre-a-gre.service';
 import { SubmitGreAGreDto } from './dto/submit-gre-a-gre.dto';
 import { ValidateGreAGreDto } from './dto/validate-gre-a-gre.dto';
+import { ListGreAGreQueryDto } from './dto/list-gre-a-gre-query.dto';
 import { ApiTags, ApiOperation, ApiParam, ApiResponse } from '@nestjs/swagger';
 import { Request } from 'express';
 import {
@@ -13,6 +23,20 @@ import {
 @Controller('appels-offres')
 export class GreAGreController {
   constructor(private readonly greAGreService: GreAGreService) {}
+
+  @Get('gre-a-gre')
+  @ApiOperation({
+    summary: 'Lister toutes les demandes de Gré-à-Gré (paginée)',
+    description:
+      'Permet de lister et de filtrer les demandes de Gré-à-Gré dans le système.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Liste des demandes récupérée avec succès.',
+  })
+  findAll(@Query() query: ListGreAGreQueryDto) {
+    return this.greAGreService.findAll(query);
+  }
 
   @Post(':id/gre-a-gre/soumettre')
   @ApiOperation({

@@ -285,6 +285,79 @@ export class AppelOffresService {
     return { downloadUrl: presignedUrl, documentId: document.documentId };
   }
 
+  async getCdcWithMetadata(aoId: string) {
+    // 1. Vérifier que l'AO existe
+    const ao = await this.prisma.appelOffres.findUnique({
+      where: { id: aoId },
+      select: {
+        id: true,
+        reference: true,
+        statut: true,
+        dateLimiteRetraitCdc: true,
+      },
+    });
+    if (!ao) {
+      throw new NotFoundException(
+        `L'Appel d'Offres avec l'ID ${aoId} est introuvable.`,
+      );
+    }
+
+    // 2. Charger les DocumentCdc avec leurs retraits
+    const documentsCdc = await this.prisma.documentCdc.findMany({
+      where: { aoId },
+      include: {
+        retraitsCdc: {
+          select: {
+            id: true,
+            operateurId: true,
+            dateRetrait: true,
+          },
+          orderBy: { dateRetrait: 'desc' },
+        },
+      },
+      orderBy: { publieAt: 'desc' },
+    });
+
+    // 3. Récupérer les métadonnées de chaque document du document-service
+    const documentsWithMetadata = await Promise.all(
+      documentsCdc.map(async (doc) => {
+        let metadata: unknown = null;
+        try {
+          const response = await firstValueFrom(
+            this.httpService.get<unknown>(
+              `${this.documentServiceUrl}/api/documents/${doc.documentId}`,
+            ),
+          );
+          metadata = response.data;
+        } catch {
+          metadata = null;
+        }
+        return {
+          id: doc.id,
+          documentId: doc.documentId,
+          prixRetrait: doc.prixRetrait,
+          publieAt: doc.publieAt,
+          nombreRetraits: doc.retraitsCdc.length,
+          retraits: doc.retraitsCdc,
+          metadata,
+        };
+      }),
+    );
+
+    return {
+      aoId: ao.id,
+      aoReference: ao.reference,
+      aoStatut: ao.statut,
+      dateLimiteRetrait: ao.dateLimiteRetraitCdc,
+      nombreDocuments: documentsCdc.length,
+      nombreRetraits: documentsCdc.reduce(
+        (acc, d) => acc + d.retraitsCdc.length,
+        0,
+      ),
+      documents: documentsWithMetadata,
+    };
+  }
+
   calculateProposedDates(typeProcedure: string, datePublicationStr?: string) {
     const pubDate = datePublicationStr
       ? new Date(datePublicationStr)
