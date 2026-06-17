@@ -111,6 +111,7 @@ export class GreAGreService {
     this.publisher.publishGreAGreSubmitted({
       gagId: demande.id,
       aoId: demande.aoId,
+      userId: demande.serviceContractantId,
       justification: justificationText,
       submittedAt: demande.createdAt,
     });

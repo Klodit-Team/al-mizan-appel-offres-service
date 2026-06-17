@@ -58,6 +58,7 @@ export class AppelOffresService {
     const {
       wilaya,
       secteurActivite,
+      reference,
       typeProcedure,
       statut,
       page = 1,
@@ -71,6 +72,7 @@ export class AppelOffresService {
       where.secteurActivite = {
         contains: secteurActivite,
       };
+    if (reference) where.reference = reference;
     if (typeProcedure) where.typeProcedure = typeProcedure;
     if (statut) where.statut = statut;
 
@@ -80,7 +82,17 @@ export class AppelOffresService {
         skip,
         take: limit,
         orderBy: { createdAt: 'desc' },
-        include: { lots: true },
+        include: { 
+          lots: true,
+          demandeGreAGre: {
+            include: {
+              evaluationsIa: {
+                orderBy: { dateAnalyse: 'desc' },
+                take: 1,
+              },
+            },
+          },
+        },
       }),
       this.prisma.appelOffres.count({ where }),
     ]);
@@ -103,6 +115,19 @@ export class AppelOffresService {
         lots: true,
         criteresEligibilite: true,
         criteresEvaluation: true,
+        demandeGreAGre: {
+          include: {
+            evaluationsIa: {
+              orderBy: { dateAnalyse: 'desc' },
+              take: 1,
+            },
+            justifications: true,
+            decisions: {
+              orderBy: { dateDecision: 'desc' },
+              take: 1,
+            },
+          },
+        },
       },
     });
     if (!ao) {
