@@ -21,6 +21,14 @@ export class FindAllAppelOffresDto {
 
   @ApiProperty({
     required: false,
+    description: 'Filtrer par reference exacte',
+  })
+  @IsString({ message: 'La reference doit etre une chaine de caracteres' })
+  @IsOptional()
+  reference?: string;
+
+  @ApiProperty({
+    required: false,
     enum: TypeProcedure,
     description: 'Filtrer par type de procédure',
   })

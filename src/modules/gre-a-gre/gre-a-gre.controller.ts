@@ -97,7 +97,7 @@ export class GreAGreController {
   })
   @ApiResponse({
     status: 404,
-    description: 'La demande de Gré-à-Gré est introuvable.',
+    description: 'La demande de Gré-à-Gré is introuvable.',
   })
   validate(
     @Param('demandeId') demandeId: string,
