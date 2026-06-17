@@ -58,6 +58,7 @@ export class AppelOffresService {
     const {
       wilaya,
       secteurActivite,
+      reference,
       typeProcedure,
       statut,
       page = 1,
@@ -71,6 +72,7 @@ export class AppelOffresService {
       where.secteurActivite = {
         contains: secteurActivite,
       };
+    if (reference) where.reference = reference;
     if (typeProcedure) where.typeProcedure = typeProcedure;
     if (statut) where.statut = statut;
 
