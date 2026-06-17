@@ -12,6 +12,7 @@ import { GreAGreService } from './gre-a-gre.service';
 import { SubmitGreAGreDto } from './dto/submit-gre-a-gre.dto';
 import { ValidateGreAGreDto } from './dto/validate-gre-a-gre.dto';
 import { ListGreAGreQueryDto } from './dto/list-gre-a-gre-query.dto';
+import { ScoreIaGreAGreDto } from './dto/score-ia-gre-a-gre.dto';
 import { ApiTags, ApiOperation, ApiParam, ApiResponse } from '@nestjs/swagger';
 import { Request } from 'express';
 import {
@@ -105,5 +106,23 @@ export class GreAGreController {
   ) {
     const controleurId = req.user?.sub ?? 'anonymous';
     return this.greAGreService.validate(demandeId, validateDto, controleurId);
+  }
+
+  @Patch('gre-a-gre/:demandeId/score-ia')
+  @ApiOperation({
+    summary:
+      'Enregistrer le score IA de conformité Gré-à-Gré (Étape 2 — Agent IA)',
+    description:
+      "Reçoit le score de conformité calculé par l'agent IA et met à jour le statut de la demande en EN_ANALYSE_IA.",
+  })
+  @ApiParam({
+    name: 'demandeId',
+    description: 'UUID de la demande Gré-à-Gré',
+    type: String,
+  })
+  @ApiResponse({ status: 200, description: 'Score IA enregistré avec succès.' })
+  @ApiResponse({ status: 404, description: 'Demande Gré-à-Gré introuvable.' })
+  recordIaScore(@Body() dto: ScoreIaGreAGreDto) {
+    return this.greAGreService.recordIaScore(dto);
   }
 }
