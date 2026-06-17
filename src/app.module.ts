@@ -44,6 +44,7 @@ import { ClarificationsModule } from './modules/clarifications/clarifications.mo
     PrismaModule,
 
     // Modules métier
+    GreAGreModule,
     AppelOffresModule,
     LotsModule,
     CriteresEligibiliteModule,
@@ -57,7 +58,6 @@ import { ClarificationsModule } from './modules/clarifications/clarifications.mo
     AttributionModule,
 
     MarcheModule,
-    GreAGreModule,
     ClarificationsModule,
   ],
   controllers: [],

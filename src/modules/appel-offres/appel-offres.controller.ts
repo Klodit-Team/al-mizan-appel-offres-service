@@ -242,9 +242,9 @@ export class AppelOffresController {
 
   @Get(':id/cdc')
   @ApiOperation({
-    summary: 'Alias : obtenir un lien de téléchargement sécurisé du CDC',
+    summary: 'Obtenir le CDC avec ses métadonnées et statistiques de retrait',
     description:
-      'Génère une URL présignée MinIO sécurisée et temporaire (alias raccourci).',
+      'Retourne la liste des documents CDC avec les métadonnées enrichies du service documentaire, le prix, la date de publication et les retraits.',
   })
   @ApiParam({
     name: 'id',
@@ -253,13 +253,9 @@ export class AppelOffresController {
   })
   @ApiResponse({
     status: 200,
-    description: 'Lien présigné généré avec succès.',
+    description: 'Détails du CDC et statistiques récupérés avec succès.',
   })
-  async getCdcDownloadUrlAlias(
-    @Param('id') id: string,
-    @Req() req: Request & { user?: { sub: string } },
-  ) {
-    const operateurId = req.user?.sub ?? 'anonymous';
-    return this.appelOffresService.getPresignedDownloadUrl(id, operateurId);
+  async getCdcWithMetadata(@Param('id') id: string) {
+    return this.appelOffresService.getCdcWithMetadata(id);
   }
 }

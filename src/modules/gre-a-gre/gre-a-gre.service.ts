@@ -3,9 +3,11 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { SubmitGreAGreDto } from './dto/submit-gre-a-gre.dto';
 import { ValidateGreAGreDto } from './dto/validate-gre-a-gre.dto';
 import { ScoreIaGreAGreDto } from './dto/score-ia-gre-a-gre.dto';
+import { ListGreAGreQueryDto } from './dto/list-gre-a-gre-query.dto';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AoEventsPublisher } from '../../messaging/publishers/ao-events.publisher';
 
@@ -15,6 +17,41 @@ export class GreAGreService {
     private readonly prisma: PrismaService,
     private readonly publisher: AoEventsPublisher,
   ) {}
+
+  async findAll(query: ListGreAGreQueryDto) {
+    const { page = 1, limit = 10, statut, aoId, serviceContractantId } = query;
+    const skip = (page - 1) * limit;
+
+    const where: Prisma.DemandeGreAGreWhereInput = {};
+    if (statut) where.statut = statut;
+    if (aoId) where.aoId = aoId;
+    if (serviceContractantId) where.serviceContractantId = serviceContractantId;
+
+    const [data, total] = await Promise.all([
+      this.prisma.demandeGreAGre.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          justifications: true,
+          evaluationsIa: { orderBy: { dateAnalyse: 'desc' }, take: 1 },
+          decisions: { orderBy: { dateDecision: 'desc' }, take: 1 },
+        },
+      }),
+      this.prisma.demandeGreAGre.count({ where }),
+    ]);
+
+    return {
+      data,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
 
   // ─── Méthode utilitaire privée (évite la duplication du 404) ──────────────
   private async findAoOrFail(aoId: string) {

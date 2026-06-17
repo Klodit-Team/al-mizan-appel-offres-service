@@ -21,6 +21,7 @@ describe('AppelOffresController', () => {
     updateStatut: jest.fn(),
     uploadCdc: jest.fn(),
     getPresignedDownloadUrl: jest.fn(),
+    getCdcWithMetadata: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -86,6 +87,22 @@ describe('AppelOffresController', () => {
       expect(
         mockAppelOffresService.getPresignedDownloadUrl,
       ).toHaveBeenCalledWith('ao-id', 'anonymous');
+    });
+  });
+
+  describe('getCdcWithMetadata', () => {
+    it('doit appeler le service getCdcWithMetadata avec aoId', async () => {
+      const mockResult = { aoId: 'ao-id', documents: [] };
+      mockAppelOffresService.getCdcWithMetadata.mockResolvedValueOnce(
+        mockResult,
+      );
+
+      const result = await controller.getCdcWithMetadata('ao-id');
+
+      expect(mockAppelOffresService.getCdcWithMetadata).toHaveBeenCalledWith(
+        'ao-id',
+      );
+      expect(result).toEqual(mockResult);
     });
   });
 });

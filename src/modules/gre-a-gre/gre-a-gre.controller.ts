@@ -1,7 +1,17 @@
-import { Controller, Post, Body, Param, Patch, Req } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Param,
+  Patch,
+  Req,
+  Get,
+  Query,
+} from '@nestjs/common';
 import { GreAGreService } from './gre-a-gre.service';
 import { SubmitGreAGreDto } from './dto/submit-gre-a-gre.dto';
 import { ValidateGreAGreDto } from './dto/validate-gre-a-gre.dto';
+import { ListGreAGreQueryDto } from './dto/list-gre-a-gre-query.dto';
 import { ScoreIaGreAGreDto } from './dto/score-ia-gre-a-gre.dto';
 import { ApiTags, ApiOperation, ApiParam, ApiResponse } from '@nestjs/swagger';
 import { Request } from 'express';
@@ -14,6 +24,20 @@ import {
 @Controller('appels-offres')
 export class GreAGreController {
   constructor(private readonly greAGreService: GreAGreService) {}
+
+  @Get('gre-a-gre')
+  @ApiOperation({
+    summary: 'Lister toutes les demandes de Gré-à-Gré (paginée)',
+    description:
+      'Permet de lister et de filtrer les demandes de Gré-à-Gré dans le système.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Liste des demandes récupérée avec succès.',
+  })
+  findAll(@Query() query: ListGreAGreQueryDto) {
+    return this.greAGreService.findAll(query);
+  }
 
   @Post(':id/gre-a-gre/soumettre')
   @ApiOperation({
@@ -73,7 +97,7 @@ export class GreAGreController {
   })
   @ApiResponse({
     status: 404,
-    description: 'La demande de Gré-à-Gré est introuvable.',
+    description: 'La demande de Gré-à-Gré is introuvable.',
   })
   validate(
     @Param('demandeId') demandeId: string,
@@ -86,11 +110,16 @@ export class GreAGreController {
 
   @Patch('gre-a-gre/:demandeId/score-ia')
   @ApiOperation({
-    summary: "Enregistrer le score IA de conformité Gré-à-Gré (Étape 2 — Agent IA)",
+    summary:
+      'Enregistrer le score IA de conformité Gré-à-Gré (Étape 2 — Agent IA)',
     description:
       "Reçoit le score de conformité calculé par l'agent IA et met à jour le statut de la demande en EN_ANALYSE_IA.",
   })
-  @ApiParam({ name: 'demandeId', description: 'UUID de la demande Gré-à-Gré', type: String })
+  @ApiParam({
+    name: 'demandeId',
+    description: 'UUID de la demande Gré-à-Gré',
+    type: String,
+  })
   @ApiResponse({ status: 200, description: 'Score IA enregistré avec succès.' })
   @ApiResponse({ status: 404, description: 'Demande Gré-à-Gré introuvable.' })
   recordIaScore(@Body() dto: ScoreIaGreAGreDto) {

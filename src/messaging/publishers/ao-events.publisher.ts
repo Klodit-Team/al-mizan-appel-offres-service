@@ -1,4 +1,10 @@
-import { Injectable, Inject, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+import {
+  Injectable,
+  Inject,
+  Logger,
+  OnModuleInit,
+  OnModuleDestroy,
+} from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { StatutAO } from '@prisma/client';
 import * as amqp from 'amqplib';
@@ -66,7 +72,6 @@ export interface AoClarificationReponduePayload {
   reponduAt: Date;
 }
 
-
 // ─── Publisher ────────────────────────────────────────────────────────────────
 
 @Injectable()
@@ -82,13 +87,21 @@ export class AoEventsPublisher implements OnModuleInit, OnModuleDestroy {
 
   async onModuleInit() {
     try {
-      const url = process.env.RABBITMQ_URL || 'amqp://guest:guest@localhost:5672';
+      const url =
+        process.env.RABBITMQ_URL || 'amqp://guest:guest@localhost:5672';
       this.connection = await amqp.connect(url);
       this.channel = await this.connection.createChannel();
-      await this.channel.assertExchange(this.exchange, 'topic', { durable: true });
-      this.logger.log(`Raw AMQP publisher connected to exchange ${this.exchange}`);
+      await this.channel.assertExchange(this.exchange, 'topic', {
+        durable: true,
+      });
+      this.logger.log(
+        `Raw AMQP publisher connected to exchange ${this.exchange}`,
+      );
     } catch (err) {
-      this.logger.error('Failed to initialize raw AMQP publisher', (err as Error).message);
+      this.logger.error(
+        'Failed to initialize raw AMQP publisher',
+        (err as Error).message,
+      );
     }
   }
 
@@ -96,7 +109,7 @@ export class AoEventsPublisher implements OnModuleInit, OnModuleDestroy {
     try {
       await this.channel?.close();
       await this.connection?.close();
-    } catch (err) {
+    } catch {
       this.logger.warn('Error while closing raw AMQP publisher connection');
     }
   }
@@ -109,9 +122,14 @@ export class AoEventsPublisher implements OnModuleInit, OnModuleDestroy {
           persistent: true,
           contentType: 'application/json',
         });
-        this.logger.debug(`Raw published [${routingKey}] to exchange [${this.exchange}]`);
+        this.logger.debug(
+          `Raw published [${routingKey}] to exchange [${this.exchange}]`,
+        );
       } catch (err) {
-        this.logger.error(`Failed to raw publish [${routingKey}]`, (err as Error).message);
+        this.logger.error(
+          `Failed to raw publish [${routingKey}]`,
+          (err as Error).message,
+        );
       }
     }
   }
@@ -215,5 +233,4 @@ export class AoEventsPublisher implements OnModuleInit, OnModuleDestroy {
     this.client.emit('ao.clarification.repondue', payload);
     this.publishRaw('ao.clarification.repondue', payload);
   }
-
 }

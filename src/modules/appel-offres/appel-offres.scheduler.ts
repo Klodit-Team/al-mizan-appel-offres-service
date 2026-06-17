@@ -19,7 +19,7 @@ export class AppelOffresScheduler {
    * puis met à jour leur statut à OUVERTURE_PLIS de manière transactionnelle et publie
    * l'événement de changement de statut correspondant.
    */
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+
   @Cron('0 * * * *')
   async handleExpiredAppelsOffres() {
     this.logger.log(
