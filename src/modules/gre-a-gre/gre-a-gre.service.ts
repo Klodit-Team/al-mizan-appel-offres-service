@@ -2,8 +2,12 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  Logger,
 } from '@nestjs/common';
+import { HttpService } from '@nestjs/axios';
+import { ConfigService } from '@nestjs/config';
 import { Prisma } from '@prisma/client';
+import { firstValueFrom } from 'rxjs';
 import { SubmitGreAGreDto } from './dto/submit-gre-a-gre.dto';
 import { ValidateGreAGreDto } from './dto/validate-gre-a-gre.dto';
 import { ScoreIaGreAGreDto } from './dto/score-ia-gre-a-gre.dto';
@@ -13,10 +17,20 @@ import { AoEventsPublisher } from '../../messaging/publishers/ao-events.publishe
 
 @Injectable()
 export class GreAGreService {
+  private readonly logger = new Logger(GreAGreService.name);
+  private readonly auditBaseUrl: string;
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly publisher: AoEventsPublisher,
-  ) {}
+    private readonly httpService: HttpService,
+    private readonly configService: ConfigService,
+  ) {
+    this.auditBaseUrl = this.configService.get<string>(
+      'AUDIT_BASE_URL',
+      this.configService.get<string>('AUDIT_SERVICE_URL', 'http://localhost:3009'),
+    );
+  }
 
   async findAll(query: ListGreAGreQueryDto) {
     const { page = 1, limit = 10, statut, aoId, serviceContractantId } = query;
@@ -34,6 +48,7 @@ export class GreAGreService {
         take: limit,
         orderBy: { createdAt: 'desc' },
         include: {
+          appelOffres: true,
           justifications: true,
           evaluationsIa: { orderBy: { dateAnalyse: 'desc' }, take: 1 },
           decisions: { orderBy: { dateDecision: 'desc' }, take: 1 },
@@ -51,6 +66,26 @@ export class GreAGreService {
         totalPages: Math.ceil(total / limit),
       },
     };
+  }
+
+  async findOne(demandeId: string) {
+    const demande = await this.prisma.demandeGreAGre.findUnique({
+      where: { id: demandeId },
+      include: {
+        appelOffres: true,
+        justifications: { orderBy: { ordre: 'asc' } },
+        evaluationsIa: { orderBy: { dateAnalyse: 'desc' }, take: 1 },
+        decisions: { orderBy: { dateDecision: 'desc' }, take: 1 },
+      },
+    });
+
+    if (!demande) {
+      throw new NotFoundException(
+        `Demande Gré-à-Gré "${demandeId}" non trouvée.`,
+      );
+    }
+
+    return demande;
   }
 
   // ─── Méthode utilitaire privée (évite la duplication du 404) ──────────────
@@ -200,7 +235,59 @@ export class GreAGreService {
       validatedAt: transactionResult.decisionEntity.dateDecision,
     });
 
+    if (
+      validateDto.decision === 'ACCEPTER' &&
+      derniereEval?.recommandation === 'REJETER'
+    ) {
+      await this.raiseAcceptedAfterIaRefusalIncident({
+        demandeId: demande.id,
+        aoId: demande.aoId,
+        modeleIa: derniereEval.modeleIa,
+        decisionHumaine: validateDto.decision,
+        confianceIa: Number(derniereEval.confianceScore),
+        scoreConformite: Number(derniereEval.scoreConformite),
+      });
+    }
+
     return transactionResult;
+  }
+
+  private async raiseAcceptedAfterIaRefusalIncident(input: {
+    demandeId: string;
+    aoId: string;
+    modeleIa: string;
+    decisionHumaine: string;
+    confianceIa: number;
+    scoreConformite: number;
+  }) {
+    try {
+      await firstValueFrom(
+        this.httpService.post(`${this.auditBaseUrl}/incidents`, {
+          type_incident: 'DIVERGENCE_GRE_A_GRE',
+          entite_source: 'demandes_gre_a_gre',
+          entite_id: input.demandeId,
+          modele_ia: input.modeleIa || 'gre-a-gre-agent',
+          decision_ia: 'REJETER',
+          decision_humaine: input.decisionHumaine,
+          ecart_score: Number.isFinite(input.scoreConformite)
+            ? Math.max(0, Math.min(100, 100 - input.scoreConformite)) / 100
+            : undefined,
+          confiance_ia: Number.isFinite(input.confianceIa)
+            ? Math.max(0, Math.min(1, input.confianceIa > 1 ? input.confianceIa / 100 : input.confianceIa))
+            : undefined,
+          gravite: 'CRITIQUE',
+          date_detection: new Date().toISOString(),
+        }),
+      );
+      this.logger.warn(
+        `Incident IA créé pour acceptation humaine malgré refus IA — GAG ${input.demandeId} | AO ${input.aoId}`,
+      );
+    } catch (error) {
+      this.logger.error(
+        `Impossible de créer l'incident IA pour GAG ${input.demandeId}`,
+        error instanceof Error ? error.stack : String(error),
+      );
+    }
   }
 
   // ─── US 12 : Enregistrement du score IA ──────────────────────────────────

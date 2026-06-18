@@ -1,5 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
+import { HttpService } from '@nestjs/axios';
+import { ConfigService } from '@nestjs/config';
 import { GreAGreService } from './gre-a-gre.service';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AoEventsPublisher } from '../../messaging/publishers/ao-events.publisher';
@@ -71,6 +73,14 @@ const mockPublisher = {
   publishGreAGreValidated: jest.fn(),
 };
 
+const mockHttpService = {
+  post: jest.fn(),
+};
+
+const mockConfigService = {
+  get: jest.fn((key: string, fallback?: string) => fallback),
+};
+
 // ─── Suite de tests ─────────────────────────────────────────────────────────
 describe('GreAGreService', () => {
   let service: GreAGreService;
@@ -81,6 +91,8 @@ describe('GreAGreService', () => {
         GreAGreService,
         { provide: PrismaService, useValue: mockPrismaService },
         { provide: AoEventsPublisher, useValue: mockPublisher },
+        { provide: HttpService, useValue: mockHttpService },
+        { provide: ConfigService, useValue: mockConfigService },
       ],
     }).compile();
 

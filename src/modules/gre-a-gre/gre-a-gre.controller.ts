@@ -39,6 +39,29 @@ export class GreAGreController {
     return this.greAGreService.findAll(query);
   }
 
+  @Get('gre-a-gre/:demandeId')
+  @ApiOperation({
+    summary: "Détail d'une demande de Gré-à-Gré",
+    description:
+      "Retourne les pièces, l'analyse IA, la décision humaine et l'appel d'offres rattaché.",
+  })
+  @ApiParam({
+    name: 'demandeId',
+    description: 'UUID unique de la demande de Gré-à-Gré',
+    type: String,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Demande récupérée avec succès.',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'La demande de Gré-à-Gré est introuvable.',
+  })
+  findOne(@Param('demandeId') demandeId: string) {
+    return this.greAGreService.findOne(demandeId);
+  }
+
   @Post(':id/gre-a-gre/soumettre')
   @ApiOperation({
     summary: 'Soumettre une demande de Gré-à-Gré avec ses pièces (Étape 1)',
